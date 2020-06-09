@@ -1,11 +1,13 @@
 package com.getcapacitor.plugin.notification;
 
+import android.content.ContentResolver;
 import android.content.Context;
-import android.util.Log;
+import android.net.Uri;
 
+import com.getcapacitor.Config;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import com.getcapacitor.LogUtils;
+import com.getcapacitor.Logger;
 import com.getcapacitor.PluginCall;
 
 import org.json.JSONException;
@@ -21,14 +23,24 @@ import java.util.List;
  */
 public class LocalNotification {
 
+  private static final String CONFIG_KEY_PREFIX = "plugins.LocalNotifications.";
+  private static final int RESOURCE_ID_ZERO_VALUE = 0;
+  private static int defaultSmallIconID = RESOURCE_ID_ZERO_VALUE;
+  private static int defaultSoundID = RESOURCE_ID_ZERO_VALUE;
+
   private String title;
   private String body;
   private Integer id;
   private String sound;
+  private String smallIcon;
+  private String iconColor;
   private String actionTypeId;
+  private String group;
+  private boolean groupSummary;
   private JSObject extra;
   private List<LocalNotificationAttachment> attachments;
   private LocalNotificationSchedule schedule;
+  private String channelId;
 
   private String source;
 
@@ -57,14 +69,45 @@ public class LocalNotification {
     this.schedule = schedule;
   }
 
-  public String getSound() {
-    return sound;
+  public String getSound(Context context) {
+    String soundPath = null;
+    int resId = RESOURCE_ID_ZERO_VALUE;
+    String name = getResourceBaseName(sound);
+    if (name != null) {
+      resId = getResourceID(context, name, "raw");
+    }
+    if (resId == RESOURCE_ID_ZERO_VALUE) {
+      resId = getDefaultSound(context);
+    }
+    if(resId != RESOURCE_ID_ZERO_VALUE){
+      soundPath = ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/" + resId;
+    }
+    return soundPath;
   }
 
   public void setSound(String sound) {
     this.sound = sound;
   }
 
+  public void setSmallIcon(String smallIcon) { this.smallIcon = getResourceBaseName(smallIcon); }
+
+  public String getIconColor() { 
+    // use the one defined local before trying for a globally defined color
+    if (iconColor != null) {
+      return iconColor;
+    } 
+    
+    String globalColor = Config.getString(CONFIG_KEY_PREFIX + "iconColor");
+    if (globalColor != null) {
+      return globalColor;
+    }
+
+    return null;
+  }
+
+  public void setIconColor(String iconColor) {
+    this.iconColor = iconColor;
+  }
 
   public List<LocalNotificationAttachment> getAttachments() {
     return attachments;
@@ -82,6 +125,14 @@ public class LocalNotification {
     this.actionTypeId = actionTypeId;
   }
 
+  public String getGroup() {
+    return group;
+  }
+
+  public void setGroup(String group) {
+    this.group = group;
+  }
+
   public JSObject getExtra() {
     return extra;
   }
@@ -96,6 +147,22 @@ public class LocalNotification {
 
   public void setId(Integer id) {
     this.id = id;
+  }
+
+  public boolean isGroupSummary() {
+    return groupSummary;
+  }
+
+  public void setGroupSummary(boolean groupSummary) {
+    this.groupSummary = groupSummary;
+  }
+
+  public String getChannelId() {
+    return channelId;
+  }
+
+  public void setChannelId(String channelId) {
+    this.channelId = channelId;
   }
 
   /**
@@ -129,9 +196,14 @@ public class LocalNotification {
       activeLocalNotification.setId(notification.getInteger("id"));
       activeLocalNotification.setBody(notification.getString("body"));
       activeLocalNotification.setActionTypeId(notification.getString("actionTypeId"));
+      activeLocalNotification.setGroup(notification.getString("group"));
       activeLocalNotification.setSound(notification.getString("sound"));
       activeLocalNotification.setTitle(notification.getString("title"));
+      activeLocalNotification.setSmallIcon(notification.getString("smallIcon"));
+      activeLocalNotification.setIconColor(notification.getString("iconColor"));
       activeLocalNotification.setAttachments(LocalNotificationAttachment.getAttachments(notification));
+      activeLocalNotification.setGroupSummary(notification.getBoolean("groupSummary", false));
+      activeLocalNotification.setChannelId(notification.getString("channelId"));
       try {
         activeLocalNotification.setSchedule(new LocalNotificationSchedule(notification));
       } catch (ParseException e) {
@@ -178,9 +250,59 @@ public class LocalNotification {
   }
 
   public int getSmallIcon(Context context) {
-    // TODO support custom icons
-    int resId = android.R.drawable.ic_dialog_info;
+    int resId = RESOURCE_ID_ZERO_VALUE;
+
+    if(smallIcon != null){
+      resId = getResourceID(context, smallIcon,"drawable");
+    }
+
+    if(resId == RESOURCE_ID_ZERO_VALUE){
+      resId = getDefaultSmallIcon(context);
+    }
+
     return resId;
+  }
+
+  private static int getDefaultSmallIcon(Context context){
+    if(defaultSmallIconID != RESOURCE_ID_ZERO_VALUE) return defaultSmallIconID;
+
+    int resId = RESOURCE_ID_ZERO_VALUE;
+    String smallIconConfigResourceName = Config.getString(CONFIG_KEY_PREFIX + "smallIcon");
+    smallIconConfigResourceName = getResourceBaseName(smallIconConfigResourceName);
+
+    if(smallIconConfigResourceName != null){
+      resId = getResourceID(context, smallIconConfigResourceName, "drawable");
+    }
+
+    if(resId == RESOURCE_ID_ZERO_VALUE){
+      resId = android.R.drawable.ic_dialog_info;
+    }
+
+    defaultSmallIconID = resId;
+    return resId;
+  }
+
+  private static int getDefaultSound(Context context){
+    if(defaultSoundID != RESOURCE_ID_ZERO_VALUE) return defaultSoundID;
+
+    int resId = RESOURCE_ID_ZERO_VALUE;
+    String soundConfigResourceName = Config.getString(CONFIG_KEY_PREFIX + "sound");
+    soundConfigResourceName = getResourceBaseName(soundConfigResourceName);
+
+    if(soundConfigResourceName != null){
+      resId = getResourceID(context, soundConfigResourceName, "raw");
+    }
+
+    defaultSoundID = resId;
+    return resId;
+  }
+
+  public static Uri getDefaultSoundUrl(Context context){
+    int soundId = LocalNotification.getDefaultSound(context);
+    if (soundId != RESOURCE_ID_ZERO_VALUE) {
+      return Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/" + soundId);
+    }
+    return null;
   }
 
   public boolean isScheduled() {
@@ -197,10 +319,14 @@ public class LocalNotification {
             ", body='" + body + '\'' +
             ", id=" + id +
             ", sound='" + sound + '\'' +
+            ", smallIcon='" + smallIcon + '\'' +
+            ", iconColor='" + iconColor + '\'' +
             ", actionTypeId='" + actionTypeId + '\'' +
+            ", group='" + group + '\'' +
             ", extra=" + extra +
             ", attachments=" + attachments +
             ", schedule=" + schedule +
+            ", groupSummary=" + groupSummary +
             '}';
   }
 
@@ -215,11 +341,15 @@ public class LocalNotification {
     if (body != null ? !body.equals(that.body) : that.body != null) return false;
     if (id != null ? !id.equals(that.id) : that.id != null) return false;
     if (sound != null ? !sound.equals(that.sound) : that.sound != null) return false;
+    if (smallIcon != null ? !smallIcon.equals(that.smallIcon) : that.smallIcon != null) return false;
+    if (iconColor != null ? !iconColor.equals(that.iconColor) : that.iconColor != null) return false;
     if (actionTypeId != null ? !actionTypeId.equals(that.actionTypeId) : that.actionTypeId != null)
       return false;
+    if (group != null ? !group.equals(that.group) : that.group != null) return false;
     if (extra != null ? !extra.equals(that.extra) : that.extra != null) return false;
     if (attachments != null ? !attachments.equals(that.attachments) : that.attachments != null)
       return false;
+    if (groupSummary != that.groupSummary) return false;
     return schedule != null ? schedule.equals(that.schedule) : that.schedule == null;
   }
 
@@ -229,7 +359,11 @@ public class LocalNotification {
     result = 31 * result + (body != null ? body.hashCode() : 0);
     result = 31 * result + (id != null ? id.hashCode() : 0);
     result = 31 * result + (sound != null ? sound.hashCode() : 0);
+    result = 31 * result + (smallIcon != null ? smallIcon.hashCode() : 0);
+    result = 31 * result + (iconColor != null ? iconColor.hashCode() : 0);
     result = 31 * result + (actionTypeId != null ? actionTypeId.hashCode() : 0);
+    result = 31 * result + (group != null ? group.hashCode() : 0);
+    result = 31 * result + Boolean.hashCode(groupSummary);
     result = 31 * result + (extra != null ? extra.hashCode() : 0);
     result = 31 * result + (attachments != null ? attachments.hashCode() : 0);
     result = 31 * result + (schedule != null ? schedule.hashCode() : 0);
@@ -242,7 +376,7 @@ public class LocalNotification {
       JSONObject jsonObject = new JSONObject(extraFromString);
       this.extra = JSObject.fromJSONObject(jsonObject);
     } catch (JSONException e) {
-      Log.e(LogUtils.getPluginTag("LN"), "Cannot rebuild extra data", e);
+      Logger.error(Logger.tags("LN"), "Cannot rebuild extra data", e);
     }
   }
 
@@ -252,5 +386,23 @@ public class LocalNotification {
 
   public void setSource(String source) {
     this.source = source;
+  }
+
+  private static int getResourceID(Context context, String resourceName, String dir){
+    return context.getResources().getIdentifier(resourceName, dir, context.getPackageName());
+  }
+
+  private static String getResourceBaseName (String resPath) {
+    if (resPath == null) return null;
+
+    if (resPath.contains("/")) {
+      return resPath.substring(resPath.lastIndexOf('/') + 1);
+    }
+
+    if (resPath.contains(".")) {
+      return resPath.substring(0, resPath.lastIndexOf('.'));
+    }
+
+    return resPath;
   }
 }

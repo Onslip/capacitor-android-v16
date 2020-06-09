@@ -5,12 +5,21 @@ import org.json.JSONException;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
 public class JSArray extends JSONArray {
   public JSArray() {
     super();
+  }
+
+  public JSArray(String json) throws JSONException {
+    super(json);
+  }
+
+  public JSArray(Collection copyFrom) {
+    super(copyFrom);
   }
 
   public JSArray(Object array) throws JSONException {

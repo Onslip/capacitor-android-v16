@@ -34,7 +34,7 @@ This starts a wizard prompting you for information about your new plugin. For ex
 ```bash
 npx @onslip/capacitor-cli plugin:generate
 ✏️  Creating new Capacitor plugin
-? Plugin NPM name (snake-case): my-plugin
+? Plugin NPM name (kebab-case): my-plugin
 ? Plugin id (domain-style syntax. ex: com.example.plugin) com.ionicframework.myplugin
 ? Plugin class name (ex: AwesomePlugin) MyPlugin
 ? description:
@@ -44,7 +44,7 @@ npx @onslip/capacitor-cli plugin:generate
 ? package.json will be created, do you want to continue? (Y/n)
 ```
 
- - `Plugin NPM name`: a snake-case name of a package that will be available on npm (not a strict requirement if your package will be on a private npm repo).
+ - `Plugin NPM name`: a kebab-case name of a package that will be available on npm (not a strict requirement if your package will be on a private npm repo).
  - `Plugin ID`: a domain-style identifier. It is primarily used for the package name in Java.
  - `Plugin Class Name`: the initial name of the class used in Java and Swift. See the additional note about class names in the [iOS Plugin](ios/) section of this guide.
  - `description`: a brief introduction about the plugin.
@@ -89,4 +89,4 @@ Your package can now be installed using `npm install your-plugin` in any Capacit
 
 Now it's up to you to make your plugin do something truly awesome!
 
-Follow the [iOS](./ios) guide for information on using Swift (or Obj-C) to build an iOS plugin, the [Android](./android) guide for building Android plugins with Java, the [Web](./web) guide for implementing web and PWA functionality for your plugin, and the [Custom JavaScript](./js) guide for information on how to build a custom JavaScript plugin (i.e. in addition to Capacitor's auto-JS plugin binding).
+Follow the [iOS](/docs/plugins/ios) guide for information on using Swift (or Obj-C) to build an iOS plugin, the [Android](/docs/plugins/android) guide for building Android plugins with Java, the [Web](/docs/plugins/web) guide for implementing web and PWA functionality for your plugin, and the [Custom JavaScript](/docs/plugins/js) guide for information on how to build a custom JavaScript plugin (i.e. in addition to Capacitor's auto-JS plugin binding).

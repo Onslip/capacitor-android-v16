@@ -17,8 +17,7 @@ package com.getcapacitor;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
-
+import com.getcapacitor.WebView.CookieManager;
 import com.getcapacitor.WebView.WebResourceRequest;
 import com.getcapacitor.WebView.WebResourceResponse;
 
@@ -46,7 +45,6 @@ import java.util.Map;
  */
 public class WebViewLocalServer {
 
-  private final static String capacitorScheme = Bridge.CAPACITOR_SCHEME_NAME;
   private final static String capacitorFileStart = Bridge.CAPACITOR_FILE_START;
   private final static String capacitorContentStart = Bridge.CAPACITOR_CONTENT_START;
   private String basePath;
@@ -144,12 +142,12 @@ public class WebViewLocalServer {
     }
     Uri uri = Uri.parse(url);
     if (uri == null) {
-      Log.e(LogUtils.getCoreTag(), "Malformed URL: " + url);
+      Logger.error("Malformed URL: " + url);
       return null;
     }
     String path = uri.getPath();
     if (path == null || path.length() == 0) {
-      Log.e(LogUtils.getCoreTag(), "URL does not have a path: " + url);
+      Logger.error("URL does not have a path: " + url);
       return null;
     }
     return uri;
@@ -174,8 +172,8 @@ public class WebViewLocalServer {
       return null;
     }
 
-    if (isLocalFile(loadingUrl) || loadingUrl.toString().startsWith(bridge.getLocalUrl())) {
-      Log.d(LogUtils.getCoreTag(), "Handling local request: " + request.getUrl().toString());
+    if (isLocalFile(loadingUrl) || (Config.getString("server.url") == null && !bridge.getAppAllowNavigationMask().matches(loadingUrl.getHost()))) {
+      Logger.debug("Handling local request: " + request.getUrl().toString());
       return handleLocalRequest(request, handler);
     } else {
       return handleProxyRequest(request, handler);
@@ -240,7 +238,7 @@ public class WebViewLocalServer {
           responseStream = protocolHandler.openFile(startPath);
         }
       } catch (IOException e) {
-        Log.e(LogUtils.getCoreTag(), "Unable to open index.html", e);
+        Logger.error("Unable to open index.html", e);
         return null;
       }
 
@@ -256,7 +254,7 @@ public class WebViewLocalServer {
       try {
         return new WebResourceResponse("image/png", null, null);
       } catch (Exception e) {
-        Log.e(LogUtils.getCoreTag(), "favicon handling failed", e);
+        Logger.error("favicon handling failed", e);
       }
     }
 
@@ -299,6 +297,7 @@ public class WebViewLocalServer {
         for (Map.Entry<String, String> header : headers.entrySet()) {
           conn.setRequestProperty(header.getKey(), header.getValue());
         }
+        conn.setRequestProperty("Cookie", bridge.getWebView().getCookieManager().getCookie(request.getUrl().toString()));
         conn.setRequestMethod(method);
         conn.setReadTimeout(30 * 1000);
         conn.setConnectTimeout(30 * 1000);
@@ -325,18 +324,20 @@ public class WebViewLocalServer {
     try {
       mimeType = URLConnection.guessContentTypeFromName(path); // Does not recognize *.js
       if (mimeType != null && path.endsWith(".js") && mimeType.equals("image/x-icon")) {
-        Log.d(LogUtils.getCoreTag(), "We shouldn't be here");
+        Logger.debug("We shouldn't be here");
       }
       if (mimeType == null) {
-        if (path.endsWith(".js")) {
+        if (path.endsWith(".js") || path.endsWith(".mjs")) {
           // Make sure JS files get the proper mimetype to support ES modules
           mimeType = "application/javascript";
+        } else if (path.endsWith(".wasm")) {
+          mimeType = "application/wasm";
         } else {
           mimeType = URLConnection.guessContentTypeFromStream(stream);
         }
       }
     } catch (Exception ex) {
-      Log.e(LogUtils.getCoreTag(), "Unable to get mime type" + path, ex);
+      Logger.error("Unable to get mime type" + path, ex);
     }
     return mimeType;
   }
@@ -425,7 +426,7 @@ public class WebViewLocalServer {
             stream = protocolHandler.openAsset(assetPath + path);
           }
         } catch (IOException e) {
-          Log.e(LogUtils.getCoreTag(), "Unable to open asset URL: " + url);
+          Logger.error("Unable to open asset URL: " + url);
           return null;
         }
 
@@ -434,8 +435,13 @@ public class WebViewLocalServer {
     };
 
     for (String authority: authorities) {
-      registerUriForScheme(capacitorScheme, handler, authority);
-      registerUriForScheme("https", handler, authority);
+      registerUriForScheme(Bridge.CAPACITOR_HTTP_SCHEME, handler, authority);
+      registerUriForScheme(Bridge.CAPACITOR_HTTPS_SCHEME, handler, authority);
+
+      String customScheme = this.bridge.getScheme();
+      if (!customScheme.equals(Bridge.CAPACITOR_HTTP_SCHEME) && !customScheme.equals(Bridge.CAPACITOR_HTTPS_SCHEME)) {
+        registerUriForScheme(customScheme, handler, authority);
+      }
     }
 
   }

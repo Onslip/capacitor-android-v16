@@ -1,10 +1,10 @@
 package com.getcapacitor.plugin;
 
 import android.speech.tts.TextToSpeech;
-import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 import com.getcapacitor.CompatUtils;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.Logger;
 import com.getcapacitor.NativePlugin;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -38,8 +38,8 @@ public class Accessibility extends Plugin {
 
   @PluginMethod()
   public void isScreenReaderEnabled(PluginCall call) {
-    Log.d(getLogTag(), "Checking for screen reader");
-    Log.d(getLogTag(), "Is it enabled? " + am.isTouchExplorationEnabled());
+    Logger.debug(getLogTag(), "Checking for screen reader");
+    Logger.debug(getLogTag(), "Is it enabled? " + am.isTouchExplorationEnabled());
 
     JSObject ret = new JSObject();
     ret.put("value", am.isTouchExplorationEnabled());
@@ -68,9 +68,6 @@ public class Accessibility extends Plugin {
         }
       }
     });
-
-    // Not yet implemented
-    throw new UnsupportedOperationException();
   }
 
 }

@@ -1,5 +1,5 @@
 ---
-title: Development Workflow 
+title: Development Workflow
 description: Capacitor Workflow
 url: /docs/basics/workflow
 contributors:
@@ -15,7 +15,7 @@ contributors:
 
 Capacitor turns your web app into a native binary for each platform. Thus, much of your work will consist of developing and then building a mobile-focused web app.
 
-You will interact with the native platform underneath using Capacitor's APIs (such as [Camera](../apis/camera)), or by using existing Cordova plugins with Capacitor's [Cordova Compatibility](./cordova).
+You will interact with the native platform underneath using Capacitor's APIs (such as [Camera](/docs/apis/camera)), or by using existing Cordova plugins with Capacitor's [Cordova Compatibility](/docs/cordova).
 
 As a final step you will build your application using a command similar to
 
@@ -23,7 +23,7 @@ As a final step you will build your application using a command similar to
 npm run build
 ```
 
-If you are using a framework, follow your framework's build process. 
+If you are using a framework, follow your framework's build process.
 
 If for example you are using [Ionic](https://ionicframework.com/), this would be
 
@@ -47,15 +47,9 @@ Capacitor uses the Native IDEs to build, simulate, and run your app. To open it 
 npx cap open
 ```
 
-## 4. Periodic Maintenance
+## 4. Update the native project
 
-Your Capacitor app needs periodic maintenance, such as updating dependencies and installing new plugins.
-
-To update your app's dependencies, run
-
-```bash
-npx cap update
-```
+In some cases, the Capacitor app needs to be updated, such as when installing new plugins.
 
 To install new plugins (including Cordova ones), run
 
@@ -71,14 +65,15 @@ To check if there are any new updates to Capacitor itself, run `npx cap doctor` 
 To update Capacitor Core and CLI:
 
 ```bash
-npm update @onslip/capacitor-cli
-npm update @capacitor/core
+npm install @onslip/capacitor-cli@latest
+npm install @capacitor/core@latest
 ```
 
 To update any or all of the platforms you are using:
 
 ```bash
-npm update @capacitor/ios
-npm update @onslip/capacitor-android
-npm update @capacitor/electron
+npm install @capacitor/ios@latest
+npm install @onslip/capacitor-android@latest
 ```
+
+Note: If you don't want to risk to introduce breaking changes, use `npm update @capacitor/package-name` instead of `@latest` as `update` respects semver.
