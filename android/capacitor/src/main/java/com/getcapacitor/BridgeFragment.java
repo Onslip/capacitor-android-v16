@@ -20,6 +20,7 @@ import org.apache.cordova.ConfigXmlParser;
 import org.apache.cordova.CordovaPreferences;
 import org.apache.cordova.PluginEntry;
 import org.apache.cordova.PluginManager;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class BridgeFragment extends Fragment {
   private String lastActivityPlugin;
 
   private List<Class<? extends Plugin>> initialPlugins = new ArrayList<>();
-
+  private JSONObject config = new JSONObject();
 
   public BridgeFragment() {
     // Required empty public constructor
@@ -115,7 +116,7 @@ public class BridgeFragment extends Fragment {
       preferences = new CordovaPreferences();
     }
 
-    bridge = new Bridge(this.getActivity(), webView, initialPlugins, cordovaInterface, pluginManager, preferences);
+    bridge = new Bridge(this.getActivity(), webView, initialPlugins, cordovaInterface, pluginManager, preferences, config);
 
     if (startDir != null) {
       bridge.setServerAssetPath(startDir);
