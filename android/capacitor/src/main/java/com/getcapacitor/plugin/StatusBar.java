@@ -1,6 +1,7 @@
 package com.getcapacitor.plugin;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -18,7 +19,9 @@ public class StatusBar extends Plugin {
 
   public void load() {
     // save initial color of the status bar
-    currentStatusbarColor = getActivity().getWindow().getStatusBarColor();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      currentStatusbarColor = getActivity().getWindow().getStatusBarColor();
+    }
   }
 
   @PluginMethod()
@@ -143,8 +146,11 @@ public class StatusBar extends Plugin {
           int uiOptions = decorView.getSystemUiVisibility();
           uiOptions = uiOptions | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
           decorView.setSystemUiVisibility(uiOptions);
-          currentStatusbarColor = getActivity().getWindow().getStatusBarColor();
-          getActivity().getWindow().setStatusBarColor(Color.TRANSPARENT);
+
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            currentStatusbarColor = getActivity().getWindow().getStatusBarColor();
+            getActivity().getWindow().setStatusBarColor(Color.TRANSPARENT);
+          }
 
           call.success();
         } else {
@@ -153,8 +159,11 @@ public class StatusBar extends Plugin {
           int uiOptions = decorView.getSystemUiVisibility();
           uiOptions = uiOptions & ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE & ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
           decorView.setSystemUiVisibility(uiOptions);
-          // recover the previous color of the status bar
-          getActivity().getWindow().setStatusBarColor(currentStatusbarColor);
+
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // recover the previous color of the status bar
+            getActivity().getWindow().setStatusBarColor(currentStatusbarColor);
+          }
 
           call.success();
         }

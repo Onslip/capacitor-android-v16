@@ -73,7 +73,7 @@ public class Filesystem extends Plugin {
     Context c = bridge.getContext();
     switch(directory) {
       case "DOCUMENTS":
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        return Environment.getExternalStoragePublicDirectory("Documents");
       case "DATA":
         return c.getFilesDir();
       case "CACHE":

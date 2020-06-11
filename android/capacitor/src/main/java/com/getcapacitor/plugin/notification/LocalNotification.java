@@ -363,7 +363,7 @@ public class LocalNotification {
     result = 31 * result + (iconColor != null ? iconColor.hashCode() : 0);
     result = 31 * result + (actionTypeId != null ? actionTypeId.hashCode() : 0);
     result = 31 * result + (group != null ? group.hashCode() : 0);
-    result = 31 * result + Boolean.hashCode(groupSummary);
+    result = 31 * result + Boolean.valueOf(groupSummary).hashCode();
     result = 31 * result + (extra != null ? extra.hashCode() : 0);
     result = 31 * result + (attachments != null ? attachments.hashCode() : 0);
     result = 31 * result + (schedule != null ? schedule.hashCode() : 0);
