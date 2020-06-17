@@ -4,9 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.getcapacitor.android.R;
 import com.getcapacitor.cordova.MockCordovaInterfaceImpl;
 import com.getcapacitor.cordova.MockCordovaWebViewImpl;
@@ -16,6 +17,7 @@ import org.apache.cordova.ConfigXmlParser;
 import org.apache.cordova.CordovaPreferences;
 import org.apache.cordova.PluginEntry;
 import org.apache.cordova.PluginManager;
+import org.json.JSONObject;
 import org.xwalk.core.*;
 
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ public class BridgeActivity extends AppCompatActivity {
   private PluginManager pluginManager;
   private CordovaPreferences preferences;
   private MockCordovaWebViewImpl mockWebView;
+  private JSONObject config;
 
   private boolean useXWalk;
   private XWalkInitializer xwalkInitializer;
@@ -50,9 +53,12 @@ public class BridgeActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
   }
 
-  protected void init(final Bundle savedInstanceState, List<Class<? extends Plugin>> plugins) {
+  protected void init(Bundle savedInstanceState, List<Class<? extends Plugin>> plugins) {
+    this.init(savedInstanceState, plugins, null);
+  }
+  protected void init(final Bundle savedInstanceState, List<Class<? extends Plugin>> plugins, JSONObject config) {
     this.initialPlugins = plugins;
-
+    this.config = config;
     loadConfig(this.getApplicationContext(),this);
 
     getApplication().setTheme(getResources().getIdentifier("AppTheme_NoActionBar", "style", getPackageName()));
@@ -62,49 +68,49 @@ public class BridgeActivity extends AppCompatActivity {
     if (useXWalk) {
       xwalkInitializer = new XWalkInitializer(new XWalkInitializer.XWalkInitListener() {
         @Override public void onXWalkInitStarted() {
-          Log.i(LogUtils.getCoreTag(), "XWalk initialization started");
+          Logger.info("XWalk initialization started");
         }
 
         @Override public void onXWalkInitCancelled() {
-          Log.w(LogUtils.getCoreTag(), "XWalk initialization cancelled");
+          Logger.warn("XWalk initialization cancelled");
           finish();
         }
 
         @Override public void onXWalkInitFailed() {
-          Log.w(LogUtils.getCoreTag(), "XWalk initialization failed");
+          Logger.warn("XWalk initialization failed");
 
           if (xwalkUpdater == null) {
             if (xwalkUpdateAdapter != null) {
               xwalkUpdater = new XWalkUpdater(new XWalkUpdater.XWalkBackgroundUpdateListener() {
                 @Override public void onXWalkUpdateStarted() {
-                  Log.i(LogUtils.getCoreTag(), "XWalk update started");
+                  Logger.info("XWalk update started");
                   xwalkUpdateAdapter.onXWalkUpdateStarted();
                 }
 
                 @Override public void onXWalkUpdateProgress(int i) {
-                  Log.d(LogUtils.getCoreTag(), "XWalk update progress " + i);
+                  Logger.debug("XWalk update progress " + i);
                   xwalkUpdateAdapter.onXWalkUpdateProgress(i);
                 }
 
                 @Override public void onXWalkUpdateCancelled() {
-                  Log.w(LogUtils.getCoreTag(), "XWalk update cancelled");
+                  Logger.warn("XWalk update cancelled");
                   xwalkUpdateAdapter.onXWalkUpdateCancelled();
                 }
 
                 @Override public void onXWalkUpdateFailed() {
-                  Log.e(LogUtils.getCoreTag(), "XWalk update failed");
+                  Logger.error("XWalk update failed");
                   xwalkUpdateAdapter.onXWalkUpdateFailed();
                 }
 
                 @Override public void onXWalkUpdateCompleted() {
-                  Log.i(LogUtils.getCoreTag(), "XWalk update completed");
+                  Logger.info("XWalk update completed");
                   xwalkUpdateAdapter.onXWalkUpdateCompleted();
                 }
               }, BridgeActivity.this);
             } else {
               xwalkUpdater = new XWalkUpdater(new XWalkUpdater.XWalkUpdateListener() {
                 @Override public void onXWalkUpdateCancelled() {
-                  Log.w(LogUtils.getCoreTag(), "XWalk update cancelled");
+                  Logger.warn("XWalk update cancelled");
                   finish();
                 }
               }, BridgeActivity.this);
@@ -119,7 +125,7 @@ public class BridgeActivity extends AppCompatActivity {
         }
 
         @Override public void onXWalkInitCompleted() {
-          Log.i(LogUtils.getCoreTag(), "XWalk initialization completed");
+          Logger.info("XWalk initialization completed");
 
           BridgeActivity.this.load(savedInstanceState);
 
@@ -147,7 +153,7 @@ public class BridgeActivity extends AppCompatActivity {
    * Load the WebView and create the Bridge
    */
   protected void load(Bundle savedInstanceState) {
-    Log.d(LogUtils.getCoreTag(), "Starting BridgeActivity");
+    Logger.debug("Starting BridgeActivity");
 
     View view = findViewById(R.id.webview);
 
@@ -168,9 +174,9 @@ public class BridgeActivity extends AppCompatActivity {
 
     pluginManager = mockWebView.getPluginManager();
     cordovaInterface.onCordovaInit(pluginManager);
-    bridge = new Bridge(this, webView, initialPlugins, cordovaInterface, pluginManager, preferences);
+    bridge = new Bridge(this, webView, initialPlugins, cordovaInterface, pluginManager, preferences, this.config);
 
-    Splash.showOnLaunch(this);
+    Splash.showOnLaunch(this, bridge.getConfig());
 
     if (savedInstanceState != null) {
       bridge.restoreInstanceState(savedInstanceState);
@@ -219,7 +225,7 @@ public class BridgeActivity extends AppCompatActivity {
         bridge.onStart();
         mockWebView.handleStart();
 
-        Log.d(LogUtils.getCoreTag(), "App started");
+        Logger.debug("App started");
       }
     });
   }
@@ -232,7 +238,7 @@ public class BridgeActivity extends AppCompatActivity {
       this.bridge.onRestart();
     }
 
-    Log.d(LogUtils.getCoreTag(), "App restarted");
+    Logger.debug("App restarted");
   }
 
   @Override
@@ -249,7 +255,7 @@ public class BridgeActivity extends AppCompatActivity {
 
         mockWebView.handleResume(keepRunning);
 
-        Log.d(LogUtils.getCoreTag(), "App resumed");
+        Logger.debug("App resumed");
       }
     });
   }
@@ -267,7 +273,7 @@ public class BridgeActivity extends AppCompatActivity {
       this.mockWebView.handlePause(keepRunning);
     }
 
-    Log.d(LogUtils.getCoreTag(), "App paused");
+    Logger.debug("App paused");
   }
 
   @Override
@@ -288,16 +294,17 @@ public class BridgeActivity extends AppCompatActivity {
       mockWebView.handleStop();
     }
 
-    Log.d(LogUtils.getCoreTag(), "App stopped");
+    Logger.debug("App stopped");
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
+    this.bridge.onDestroy();
     if (this.mockWebView != null) {
       mockWebView.handleDestroy();
     }
-    Log.d(LogUtils.getCoreTag(), "App destroyed");
+    Logger.debug("App destroyed");
   }
 
   @Override

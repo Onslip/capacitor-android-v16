@@ -7,10 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.View;
 import android.webkit.*;
+import androidx.annotation.Nullable;
 
 import org.xwalk.core.*;
 
@@ -36,13 +35,13 @@ public class WebView {
     }
 
     public WebView(android.webkit.WebView webView) {
-        Log.i(LogUtils.getCoreTag(), "Using System WebView " + getWebViewVersion(webView));
+        Logger.info("Using System WebView " + getWebViewVersion(webView));
 
         this.webView = webView;
     }
 
     public WebView(XWalkView xwalkView) {
-        Log.i(LogUtils.getCoreTag(), "Using XWalk WebView " + getXWalkVersion(xwalkView));
+        Logger.info("Using XWalk WebView " + getXWalkVersion(xwalkView));
 
         this.xwalkView = xwalkView;
     }
@@ -178,7 +177,7 @@ public class WebView {
                             else if (value.length == 1) {
                                 uploadFile.onReceiveValue(value[0]);
                             } else {
-                                Log.e(LogUtils.getCoreTag(), "Expected a single file from FileChooser, got " + value.length);
+                                Logger.error("Expected a single file from FileChooser, got " + value.length);
                                 uploadFile.onReceiveValue(value[0]);
                             }
                         }

@@ -64,13 +64,13 @@ If you encountered any issue above, please let us know by filing an issue on the
 
 ### Next Steps
 
-If your app ran you are now ready to continue developing and building your app. Use the various APIs available, Capacitor or Cordova plugins, or custom native code to build our the rest of your app.
+If your app ran you are now ready to continue developing and building your app. Use the various APIs available, Capacitor or Cordova plugins, or custom native code to build out the rest of your app.
 
 ## Further Reading
 
 Follow these Android-specific guides for more information on setting permissions for your app, updating dependencies, building
 plugins, and more:
 
-[Configuring and setting permissions for Android &#8250;](./configuration)
+[Configuring and setting permissions for Android &#8250;](/docs/android/configuration)
 
-[Building Native Plugins for Android &#8250;](../plugins)
+[Building Native Plugins for Android &#8250;](/docs/plugins)

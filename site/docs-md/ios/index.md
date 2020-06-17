@@ -15,7 +15,7 @@ contributors:
 
 ## Getting Started
 
-Building iOS apps requires some iOS development dependencies to be installed, including Xcode 10 and the Xcode command line tools.
+Building iOS apps requires some iOS development dependencies to be installed, including Xcode 11 and the Xcode command line tools.
 
 Note: It's possible to develop and build iOS apps without a mac, such as by using Ionic Appflow's Package service. Consult your service of choice for more information.
 
@@ -53,12 +53,12 @@ Once Xcode is open, just click the Play button to run your app on a Simulator or
 
 ## Next steps
 
-If your app ran you are now ready to continue developing and building your app. Use the various APIs available, Capacitor or Cordova plugins, or custom native code to build our the rest of your app.
+If your app ran you are now ready to continue developing and building your app. Use the various APIs available, Capacitor or Cordova plugins, or custom native code to build out the rest of your app.
 
 ## Further Reading 
 
 Follow these guides for more information on each topic:
 
-[Configuring and setting permissions for iOS &#8250;](./configuration)
+[Configuring and setting permissions for iOS &#8250;](/docs/ios/configuration)
 
-[Building Native Plugins for iOS &#8250;](../plugins)
+[Building Native Plugins for iOS &#8250;](/docs/plugins)

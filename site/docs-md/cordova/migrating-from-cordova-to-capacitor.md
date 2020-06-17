@@ -68,21 +68,61 @@ Both android and ios folders at the root of the project are created. These are e
 
 ## Splash Screens and Icons
 
-If you've previously created icon and splash screen images, they can be found in the top-level `resources` folder of your project. [Follow this guide](https://www.joshmorony.com/adding-icons-splash-screens-launch-images-to-capacitor-projects/) to move them over to each native project.
+If you've previously created icon and splash screen images, they can be found in the top-level `resources` folder of your project. With those images in place, you can use the `cordova-res` tool to generate icons and splash screens for Capacitor-based iOS and Android projects.
+
+First, install `cordova-res`:
+
+```bash
+$ npm install -g cordova-res
+```
+
+Next, run the following to regenerate the images and copy them into the native projects:
+
+```bash
+$ cordova-res ios --skip-config --copy
+$ cordova-res android --skip-config --copy
+```
+
+[Complete details here](https://github.com/ionic-team/cordova-res#capacitor).
 
 ## Migrate Plugins
 
 Begin by auditing your existing Cordova plugins - it's possible that you may be able to remove ones that are no longer needed. 
 
-Next, review all of Capacitor's [core plugins](/docs/apis) as well as [community plugins](/docs/community/plugins). You may be able to switch to the Capacitor-equivalent Cordova plugin. Also note that some Capacitor plugins extend beyond mobile, including [PWA](/docs/web) and [Desktop](/docs/electron/) functionality, which Cordova traditionally hasn't had support for. For example, compare the [Capacitor Camera](/docs/apis/camera) to the [Cordova Camera](https://github.com/apache/cordova-plugin-camera).
+Next, review all of Capacitor's [core plugins](/docs/apis) as well as [community plugins](/docs/community/plugins). You may be able to switch to the Capacitor-equivalent Cordova plugin.
 
 Some plugins may not match functionality entirely, but based on the features you need that may not matter.
 
 Note that any plugins that are [incompatible or cause build issues](/docs/cordova/known-incompatible-plugins) are automatically skipped.
 
+### Remove Cordova Plugin
+
+After replacing a Cordova plugin with a Capacitor one (or simply removing it entirely), uninstall the plugin then run the `sync` command to remove the plugin code from a native project:
+
+```bash
+npm uninstall cordova-plugin-name
+npx cap sync [android | ios]
+```
+
 ## Set Permissions
 
 By default, the entire initial permissions requested for the latest version of Capacitor are set for you in the default native projects for both iOS and Android. However, you may need to apply additional permissions manually by mapping between `plugin.xml` and required settings on iOS and Android. Consult the [iOS](/docs/ios/configuration) and [Android](/docs/android/configuration) configuration guides for info on how to configure each platform.
+
+## Cordova Plugin preferences
+
+When `npx cap init` is run, Capacitor reads all the preferences in `config.xml` and port them to `capacitor.config.json` file. You can manually add more preferences to the `cordova.preferences` object too.
+
+```json
+{
+  "cordova": {
+    "preferences": {
+      "DisableDeploy": "true",
+      "CameraUsesGeolocation": "true"
+    }
+  }
+}
+```
+
 
 ## Additional Config.xml Fields
 
@@ -114,6 +154,18 @@ iOS `edit-config` elements need to be [configured in Info.plist](/docs/ios/confi
 ```
 
 It's impossible to cover every `config.xml` element available. However, most questions relating to "How do I configure X in Capacitor?" should be thought of as "How do I configure X in [platform] (iOS/Android)?" when searching online for answers.
+
+## Setting Scheme
+
+When using Ionic with Cordova, your app uses `cordova-plugin-ionic-webview` by default, which on iOS uses `ionic://` scheme for serving the content. Capacitor apps use `capacitor://` as default scheme on iOS. This means that using a origin-binded Web API like LocalStorage, will result in a loss of data as the origin is different. This can be fixed by changing the scheme that is used for serving the content:
+
+```json
+{
+  "server": {
+    "iosScheme": "ionic"
+  }
+}
+```
 
 ## Removing Cordova
 

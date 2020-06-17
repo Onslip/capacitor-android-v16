@@ -1,12 +1,15 @@
 package com.getcapacitor.plugin.notification;
 
+import android.content.ContentResolver;
 import android.content.Context;
-import android.util.Log;
+import android.net.Uri;
 
+import com.getcapacitor.Config;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import com.getcapacitor.LogUtils;
+import com.getcapacitor.Logger;
 import com.getcapacitor.PluginCall;
+import com.getcapacitor.plugin.util.AssetUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,10 +28,15 @@ public class LocalNotification {
   private String body;
   private Integer id;
   private String sound;
+  private String smallIcon;
+  private String iconColor;
   private String actionTypeId;
+  private String group;
+  private boolean groupSummary;
   private JSObject extra;
   private List<LocalNotificationAttachment> attachments;
   private LocalNotificationSchedule schedule;
+  private String channelId;
 
   private String source;
 
@@ -57,14 +65,44 @@ public class LocalNotification {
     this.schedule = schedule;
   }
 
-  public String getSound() {
-    return sound;
+  public String getSound(Context context, int defaultSound) {
+    String soundPath = null;
+    int resId = AssetUtil.RESOURCE_ID_ZERO_VALUE;
+    String name = AssetUtil.getResourceBaseName(sound);
+    if (name != null) {
+      resId = AssetUtil.getResourceID(context, name, "raw");
+    }
+    if (resId == AssetUtil.RESOURCE_ID_ZERO_VALUE) {
+      resId = defaultSound;
+    }
+    if(resId != AssetUtil.RESOURCE_ID_ZERO_VALUE){
+      soundPath = ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/" + resId;
+    }
+    return soundPath;
   }
 
   public void setSound(String sound) {
     this.sound = sound;
   }
 
+  public void setSmallIcon(String smallIcon) { this.smallIcon = AssetUtil.getResourceBaseName(smallIcon); }
+
+  public String getIconColor(String globalColor) {
+    // use the one defined local before trying for a globally defined color
+    if (iconColor != null) {
+      return iconColor;
+    } 
+
+    if (globalColor != null) {
+      return globalColor;
+    }
+
+    return null;
+  }
+
+  public void setIconColor(String iconColor) {
+    this.iconColor = iconColor;
+  }
 
   public List<LocalNotificationAttachment> getAttachments() {
     return attachments;
@@ -82,6 +120,14 @@ public class LocalNotification {
     this.actionTypeId = actionTypeId;
   }
 
+  public String getGroup() {
+    return group;
+  }
+
+  public void setGroup(String group) {
+    this.group = group;
+  }
+
   public JSObject getExtra() {
     return extra;
   }
@@ -96,6 +142,22 @@ public class LocalNotification {
 
   public void setId(Integer id) {
     this.id = id;
+  }
+
+  public boolean isGroupSummary() {
+    return groupSummary;
+  }
+
+  public void setGroupSummary(boolean groupSummary) {
+    this.groupSummary = groupSummary;
+  }
+
+  public String getChannelId() {
+    return channelId;
+  }
+
+  public void setChannelId(String channelId) {
+    this.channelId = channelId;
   }
 
   /**
@@ -129,9 +191,14 @@ public class LocalNotification {
       activeLocalNotification.setId(notification.getInteger("id"));
       activeLocalNotification.setBody(notification.getString("body"));
       activeLocalNotification.setActionTypeId(notification.getString("actionTypeId"));
+      activeLocalNotification.setGroup(notification.getString("group"));
       activeLocalNotification.setSound(notification.getString("sound"));
       activeLocalNotification.setTitle(notification.getString("title"));
+      activeLocalNotification.setSmallIcon(notification.getString("smallIcon"));
+      activeLocalNotification.setIconColor(notification.getString("iconColor"));
       activeLocalNotification.setAttachments(LocalNotificationAttachment.getAttachments(notification));
+      activeLocalNotification.setGroupSummary(notification.getBoolean("groupSummary", false));
+      activeLocalNotification.setChannelId(notification.getString("channelId"));
       try {
         activeLocalNotification.setSchedule(new LocalNotificationSchedule(notification));
       } catch (ParseException e) {
@@ -177,11 +244,21 @@ public class LocalNotification {
     return result;
   }
 
-  public int getSmallIcon(Context context) {
-    // TODO support custom icons
-    int resId = android.R.drawable.ic_dialog_info;
+  public int getSmallIcon(Context context, int defaultIcon) {
+    int resId = AssetUtil.RESOURCE_ID_ZERO_VALUE;
+
+    if(smallIcon != null){
+      resId = AssetUtil.getResourceID(context, smallIcon,"drawable");
+    }
+
+    if(resId == AssetUtil.RESOURCE_ID_ZERO_VALUE){
+      resId = defaultIcon;
+    }
+
     return resId;
   }
+
+
 
   public boolean isScheduled() {
     return this.schedule != null &&
@@ -197,10 +274,14 @@ public class LocalNotification {
             ", body='" + body + '\'' +
             ", id=" + id +
             ", sound='" + sound + '\'' +
+            ", smallIcon='" + smallIcon + '\'' +
+            ", iconColor='" + iconColor + '\'' +
             ", actionTypeId='" + actionTypeId + '\'' +
+            ", group='" + group + '\'' +
             ", extra=" + extra +
             ", attachments=" + attachments +
             ", schedule=" + schedule +
+            ", groupSummary=" + groupSummary +
             '}';
   }
 
@@ -215,11 +296,15 @@ public class LocalNotification {
     if (body != null ? !body.equals(that.body) : that.body != null) return false;
     if (id != null ? !id.equals(that.id) : that.id != null) return false;
     if (sound != null ? !sound.equals(that.sound) : that.sound != null) return false;
+    if (smallIcon != null ? !smallIcon.equals(that.smallIcon) : that.smallIcon != null) return false;
+    if (iconColor != null ? !iconColor.equals(that.iconColor) : that.iconColor != null) return false;
     if (actionTypeId != null ? !actionTypeId.equals(that.actionTypeId) : that.actionTypeId != null)
       return false;
+    if (group != null ? !group.equals(that.group) : that.group != null) return false;
     if (extra != null ? !extra.equals(that.extra) : that.extra != null) return false;
     if (attachments != null ? !attachments.equals(that.attachments) : that.attachments != null)
       return false;
+    if (groupSummary != that.groupSummary) return false;
     return schedule != null ? schedule.equals(that.schedule) : that.schedule == null;
   }
 
@@ -229,7 +314,11 @@ public class LocalNotification {
     result = 31 * result + (body != null ? body.hashCode() : 0);
     result = 31 * result + (id != null ? id.hashCode() : 0);
     result = 31 * result + (sound != null ? sound.hashCode() : 0);
+    result = 31 * result + (smallIcon != null ? smallIcon.hashCode() : 0);
+    result = 31 * result + (iconColor != null ? iconColor.hashCode() : 0);
     result = 31 * result + (actionTypeId != null ? actionTypeId.hashCode() : 0);
+    result = 31 * result + (group != null ? group.hashCode() : 0);
+    result = 31 * result + Boolean.valueOf(groupSummary).hashCode();
     result = 31 * result + (extra != null ? extra.hashCode() : 0);
     result = 31 * result + (attachments != null ? attachments.hashCode() : 0);
     result = 31 * result + (schedule != null ? schedule.hashCode() : 0);
@@ -242,7 +331,7 @@ public class LocalNotification {
       JSONObject jsonObject = new JSONObject(extraFromString);
       this.extra = JSObject.fromJSONObject(jsonObject);
     } catch (JSONException e) {
-      Log.e(LogUtils.getPluginTag("LN"), "Cannot rebuild extra data", e);
+      Logger.error(Logger.tags("LN"), "Cannot rebuild extra data", e);
     }
   }
 
@@ -253,4 +342,5 @@ public class LocalNotification {
   public void setSource(String source) {
     this.source = source;
   }
+
 }
