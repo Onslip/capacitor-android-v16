@@ -339,7 +339,7 @@ export function getIncompatibleCordovaPlugins(platform: string) {
   'cordova-plugin-add-swift-support', 'cordova-plugin-ionic-keyboard', 'cordova-plugin-braintree',
   '@ionic-enterprise/filesystem', '@ionic-enterprise/keyboard', '@ionic-enterprise/splashscreen', 'cordova-support-google-services'];
   if (platform === 'ios') {
-    pluginList.push('cordova-plugin-googlemaps', 'cordova-plugin-statusbar', '@ionic-enterprise/statusbar');
+    pluginList.push('cordova-plugin-statusbar', '@ionic-enterprise/statusbar');
   }
   if (platform === 'android') {
     pluginList.push('cordova-plugin-compat');
@@ -413,12 +413,13 @@ export async function writeCordovaAndroidManifest(cordovaPlugins: Plugin[], conf
       }
     });
   });
-  let cleartext = config.app.extConfig.server?.cleartext ? 'android:usesCleartextTraffic="true"' : '';
+  let cleartextString = 'android:usesCleartextTraffic="true"';
+  let cleartext = config.app.extConfig.server?.cleartext && !applicationXMLAttributes.includes(cleartextString) ? cleartextString : '';
   let content = `<?xml version='1.0' encoding='utf-8'?>
 <manifest package="capacitor.android.plugins"
 xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:amazon="http://schemas.amazon.com/apk/res/android">
-<application ${applicationXMLAttributes.join('\n')}${cleartext}>
+<application ${applicationXMLAttributes.join('\n')} ${cleartext}>
 ${applicationXMLEntries.join('\n')}
 </application>
 ${rootXMLEntries.join('\n')}

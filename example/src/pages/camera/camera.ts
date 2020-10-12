@@ -3,6 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import {
   Plugins,
+  CameraDirection,
   CameraResultType,
   CameraSource,
   FilesystemDirectory
@@ -35,11 +36,44 @@ export class CameraPage {
     console.log('ionViewDidLoad CameraPage');
   }
 
-  async getPhoto() {
+  async getFileInput() {
     const image = await Plugins.Camera.getPhoto({
       quality: 90,
       allowEditing: true,
       resultType: CameraResultType.DataUrl,
+      webUseInput: true
+    })
+    console.log('Got image back', image.path, image.webPath, image.format, image.exif);
+    this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image && (image.dataUrl));
+  }
+
+  async getPhotoFront() {
+    const image = await Plugins.Camera.getPhoto({
+      quality: 90,
+      allowEditing: true,
+      direction: CameraDirection.Front,
+      resultType: CameraResultType.DataUrl
+    })
+    console.log('Got image back', image.path, image.webPath, image.format, image.exif);
+    this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image && (image.dataUrl));
+  }
+
+  async getBase64() {
+    const image = await Plugins.Camera.getPhoto({
+      quality: 90,
+      allowEditing: true,
+      resultType: CameraResultType.Base64
+    })
+    console.log('Got image back', image.base64String, image.format);
+    this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image && (`data:${image.format};base64,${image.base64String}`));
+  }
+
+  async getPhotoPWAElements() {
+    const image = await Plugins.Camera.getPhoto({
+      quality: 90,
+      allowEditing: true,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera
     })
     console.log('Got image back', image.path, image.webPath, image.format, image.exif);
     this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image && (image.dataUrl));
@@ -152,5 +186,20 @@ export class CameraPage {
     });
     console.log('Got image back', image.path, image.webPath, image.format, image.exif);
     this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image && (image.dataUrl));
+  }
+
+  async takePicturePreservingAspectRatio() {
+    const image = await Plugins.Camera.getPhoto({
+      quality: 80,
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      saveToGallery: true,
+      correctOrientation: true,
+      height: 1920,
+      width: 1920,
+      preserveAspectRatio: true,
+    });
+    console.log('Got image back', image.path, image.webPath, image.format, image.exif);
+    this.image = this.sanitizer.bypassSecurityTrustResourceUrl(image.webPath);
   }
 }

@@ -56,7 +56,7 @@ public class BridgeActivity extends AppCompatActivity {
   protected void init(Bundle savedInstanceState, List<Class<? extends Plugin>> plugins) {
     this.init(savedInstanceState, plugins, null);
   }
-  protected void init(final Bundle savedInstanceState, List<Class<? extends Plugin>> plugins, JSONObject config) {
+  protected void init(Bundle savedInstanceState, List<Class<? extends Plugin>> plugins, JSONObject config) {
     this.initialPlugins = plugins;
     this.config = config;
     loadConfig(this.getApplicationContext(),this);
@@ -176,8 +176,6 @@ public class BridgeActivity extends AppCompatActivity {
     cordovaInterface.onCordovaInit(pluginManager);
     bridge = new Bridge(this, webView, initialPlugins, cordovaInterface, pluginManager, preferences, this.config);
 
-    Splash.showOnLaunch(this, bridge.getConfig());
-
     if (savedInstanceState != null) {
       bridge.restoreInstanceState(savedInstanceState);
     }
@@ -206,7 +204,7 @@ public class BridgeActivity extends AppCompatActivity {
   }
 
   @Override
-  public void onSaveInstanceState(final Bundle outState) {
+  public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
 
     if (this.bridge != null) {

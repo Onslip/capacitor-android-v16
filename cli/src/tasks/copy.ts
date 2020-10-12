@@ -1,5 +1,5 @@
 import { Config } from '../config';
-import { checkWebDir, logError, logFatal, logInfo, resolveNode, runTask } from '../common';
+import { checkWebDir, electronWarning, hasYarn, log, logError, logFatal, logInfo, resolveNode, resolvePlatform, runPlatformHook, runTask } from '../common';
 import { existsAsync } from '../util/fs';
 import { allSerial } from '../util/promise';
 import { copyWeb } from '../web/copy';
@@ -10,15 +10,25 @@ import { getCordovaPlugins, handleCordovaPluginsJS, writeCordovaAndroidManifest 
 import chalk from 'chalk';
 
 export async function copyCommand(config: Config, selectedPlatformName: string) {
-  const platforms = config.selectPlatforms(selectedPlatformName);
-  if (platforms.length === 0) {
-    logInfo(`There are no platforms to copy yet. Create one with \`capacitor create\`.`);
-    return;
-  }
-  try {
-    await allSerial(platforms.map(platformName => () => copy(config, platformName)));
-  } catch (e) {
-    logError(e);
+  if (selectedPlatformName && !config.isValidPlatform(selectedPlatformName)) {
+    const platformFolder = resolvePlatform(config, selectedPlatformName);
+    if (platformFolder) {
+      const result = await runPlatformHook(`cd "${platformFolder}" && ${await hasYarn(config) ? 'yarn' : 'npm'} run capacitor:copy`);
+      log(result);
+    } else {
+      logError(`platform ${selectedPlatformName} not found`);
+    }
+  } else {
+    const platforms = config.selectPlatforms(selectedPlatformName);
+    if (platforms.length === 0) {
+      logInfo(`There are no platforms to copy yet. Create one with \`capacitor create\`.`);
+      return;
+    }
+    try {
+      await allSerial(platforms.map(platformName => () => copy(config, platformName)));
+    } catch (e) {
+      logError(e);
+    }
   }
 }
 
@@ -48,6 +58,7 @@ export async function copy(config: Config, platformName: string) {
     } else if (platformName === config.electron.name) {
       await copyElectron(config);
       await copyCapacitorConfig(config, config.electron.platformDir);
+      electronWarning();
     } else {
       throw `Platform ${platformName} is not valid.`;
     }
