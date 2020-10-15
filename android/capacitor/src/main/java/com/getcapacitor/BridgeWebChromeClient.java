@@ -351,7 +351,7 @@ public class BridgeWebChromeClient extends WebChromeClient {
   public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
     String tag = Logger.tags("Console");
     if (consoleMessage.message() != null && isValidMsg(consoleMessage.message())) {
-      String msg = String.format("File: %s - Line %d - Msg: %s" , consoleMessage.sourceId() , consoleMessage.lineNumber(), consoleMessage.message());
+      String msg = String.format("%s <%s:%d>" , consoleMessage.message(), consoleMessage.sourceId() , consoleMessage.lineNumber());
       String level = consoleMessage.messageLevel().name();
       if ("ERROR".equalsIgnoreCase(level)) {
         Logger.error(tag, msg, null);

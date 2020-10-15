@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Handler;
 import android.view.Gravity;
 import android.view.View;
@@ -42,7 +43,7 @@ public class Splash {
   private static boolean isVisible = false;
   private static boolean isHiding = false;
 
-  private static void buildViews(Context c, Config config) {
+  private static void buildViews(Context c, CapConfig config) {
     if (splashImage == null) {
       String splashResourceName = config.getString(CONFIG_KEY_PREFIX + "androidSplashResourceName", "splash");
 
@@ -62,6 +63,18 @@ public class Splash {
 
       if (splash instanceof Animatable) {
         ((Animatable) splash).start();
+      }
+
+      if(splash instanceof LayerDrawable){
+        LayerDrawable layeredSplash = (LayerDrawable) splash;
+
+        for(int i = 0; i < layeredSplash.getNumberOfLayers(); i++){
+          Drawable layerDrawable = layeredSplash.getDrawable(i);
+
+          if(layerDrawable instanceof  Animatable) {
+            ((Animatable) layerDrawable).start();
+          }
+        }
       }
 
       splashImage = new ImageView(c);
@@ -169,7 +182,7 @@ public class Splash {
    * Show the splash screen on launch without fading in
    * @param a
    */
-  public static void showOnLaunch(final BridgeActivity a, Config config) {
+  public static void showOnLaunch(final BridgeActivity a, CapConfig config) {
     Integer duration = config.getInt(CONFIG_KEY_PREFIX + "launchShowDuration", DEFAULT_LAUNCH_SHOW_DURATION);
     Boolean autohide = config.getBoolean(CONFIG_KEY_PREFIX + "launchAutoHide", DEFAULT_AUTO_HIDE);
 
@@ -197,7 +210,7 @@ public class Splash {
                           final int fadeOutDuration,
                           final boolean autoHide,
                           final SplashListener splashListener,
-                          final Config config) {
+                          final CapConfig config) {
     show(a, showDuration, fadeInDuration, fadeOutDuration, autoHide, splashListener, false, config);
   }
 
@@ -218,7 +231,7 @@ public class Splash {
                           final boolean autoHide,
                           final SplashListener splashListener,
                           final boolean isLaunchSplash,
-                          final Config config) {
+                          final CapConfig config) {
     wm = (WindowManager)a.getSystemService(Context.WINDOW_SERVICE);
 
     if (a.isFinishing()) {
@@ -228,6 +241,7 @@ public class Splash {
     buildViews(a, config);
 
     if (isVisible) {
+      splashListener.completed();
       return;
     }
 
@@ -247,6 +261,11 @@ public class Splash {
               }
             }
           }, showDuration);
+        } else {
+          // If no autoHide, call complete
+          if (splashListener != null) {
+            splashListener.completed();
+          }
         }
       }
 
@@ -330,7 +349,7 @@ public class Splash {
     if(isLaunchSplash && isVisible) {
       Logger.debug("SplashScreen was automatically hidden after the launch timeout. " +
               "You should call `SplashScreen.hide()` as soon as your web app is loaded (or increase the timeout)." +
-              "Read more at https://capacitor.ionicframework.com/docs/apis/splash-screen/#hiding-the-splash-screen");
+              "Read more at https://capacitorjs.com/docs/apis/splash-screen#hiding-the-splash-screen");
     }
 
     if (isHiding || splashImage == null || splashImage.getParent() == null) {
