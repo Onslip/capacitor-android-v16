@@ -1,3 +1,99 @@
+## [2.5.0](https://github.com/ionic-team/capacitor/compare/2.4.9...2.5.0) (2021-09-07)
+
+
+### Features
+
+* feat(android): Throw error if location is disabled (#5017) ([c445a22](https://github.com/ionic-team/capacitor/commit/c445a22)), closes [#5017](https://github.com/ionic-team/capacitor/issues/5017)
+
+
+
+## [2.4.9](https://github.com/ionic-team/capacitor/compare/2.4.8...2.4.9) (2021-08-12)
+
+
+### Bug Fixes
+
+* fix(android): Properly reset orientation exif if corrected (#4912) ([214b744](https://github.com/ionic-team/capacitor/commit/214b744))
+
+
+
+## [2.4.8](https://github.com/ionic-team/capacitor/compare/2.4.7...2.4.8) (2021-07-07)
+
+
+### Bug Fixes
+
+* fix(android): proper targetSdkVersion configuration on cordova plugins (#4788) ([8119522](https://github.com/ionic-team/capacitor/commit/8119522)), closes [#4788](https://github.com/ionic-team/capacitor/issues/4788)
+* fix(camera): properly append exif data into the returned images (#4769) ([1256809](https://github.com/ionic-team/capacitor/commit/1256809)), closes [#4769](https://github.com/ionic-team/capacitor/issues/4769)
+* fix(cli): Make create install capacitor 2 (#4774) ([d24451b](https://github.com/ionic-team/capacitor/commit/d24451b)), closes [#4774](https://github.com/ionic-team/capacitor/issues/4774)
+
+
+
+## [2.4.7](https://github.com/ionic-team/capacitor/compare/2.4.6...2.4.7) (2021-03-03)
+
+
+### Bug Fixes
+
+* fix(android): live reload not working when using adb reverse (#4141) ([9d7bf79](https://github.com/ionic-team/capacitor/commit/9d7bf79)), closes [#4141](https://github.com/ionic-team/capacitor/issues/4141)
+* fix(android): Reject on FS permission prompt cancelation (#4185) ([d6991cb](https://github.com/ionic-team/capacitor/commit/d6991cb)), closes [#4185](https://github.com/ionic-team/capacitor/issues/4185)
+
+
+
+## [2.4.6](https://github.com/ionic-team/capacitor/compare/2.4.5...2.4.6) (2021-01-13)
+
+
+### Bug Fixes
+
+* fix(ios): correctly initialize cordova plugins with webViewEngine (#4039) ([273fab5](https://github.com/ionic-team/capacitor/commit/273fab5)), closes [#4039](https://github.com/ionic-team/capacitor/issues/4039)
+
+
+
+## [2.4.5](https://github.com/ionic-team/capacitor/compare/2.4.4...2.4.5) (2020-12-14)
+
+
+### Bug Fixes
+
+* fix(ios): avoid crash on portrait apps after taking a photo (#3926) ([f182868](https://github.com/ionic-team/capacitor/commit/f182868)), closes [#3926](https://github.com/ionic-team/capacitor/issues/3926)
+
+
+
+## [2.4.4](https://github.com/ionic-team/capacitor/compare/2.4.3...2.4.4) (2020-12-01)
+
+
+### Bug Fixes
+
+* fix: wildcard in allowNavigation (#3833) ([de1eac8](https://github.com/ionic-team/capacitor/commit/de1eac8)), closes [#3833](https://github.com/ionic-team/capacitor/issues/3833)
+* fix(android): load local assets when using wildcard on allowNavigation (#3834) ([66f2efb](https://github.com/ionic-team/capacitor/commit/66f2efb)), closes [#3834](https://github.com/ionic-team/capacitor/issues/3834)
+* fix(cli): replace AndroidManifest.xml Cordova variables with default value (#3863) ([9965d58](https://github.com/ionic-team/capacitor/commit/9965d58)), closes [#3863](https://github.com/ionic-team/capacitor/issues/3863)
+
+
+
+## [2.4.3](https://github.com/ionic-team/capacitor/compare/2.4.2...2.4.3) (2020-11-18)
+
+
+### Bug Fixes
+
+* fix(ios): Don't get location if permission is not determined (#3802) ([4fb9d348](https://github.com/ionic-team/capacitor/commit/4fb9d348)), closes [#3789](https://github.com/ionic-team/capacitor/issues/3789)
+* fix(Filesystem): avoid directory already exists on append (#3629) ([249073d6](https://github.com/ionic-team/capacitor/commit/249073d6)), closes [#3620](https://github.com/ionic-team/capacitor/issues/3620)
+* fix(android): Avoid SecurityError on Android 10 file share (#3655) ([1c47e15f](https://github.com/ionic-team/capacitor/commit/1c47e15f)), closes [#3638](https://github.com/ionic-team/capacitor/issues/3638)
+
+
+
+## [2.4.2](https://github.com/ionic-team/capacitor/compare/2.4.1...2.4.2) (2020-09-24)
+
+
+### Bug Fixes
+
+* fix(android): BridgeFragment NullPointerException (#3553) ([5133e2e](https://github.com/ionic-team/capacitor/commit/5133e2e)), closes [#3553](https://github.com/ionic-team/capacitor/issues/3553)
+* fix(android): move splash screen trigger before the webview render to prevent flicker (2.x) (#3608) ([cbab54c](https://github.com/ionic-team/capacitor/commit/cbab54c)), closes [#3608](https://github.com/ionic-team/capacitor/issues/3608)
+* fix(cli): halt update upon failure (#3595) ([ec086b0](https://github.com/ionic-team/capacitor/commit/ec086b0)), closes [#3595](https://github.com/ionic-team/capacitor/issues/3595)
+* fix(ios): iterate listeners to avoid mutated while being enumerated (#3572) ([fbaab54](https://github.com/ionic-team/capacitor/commit/fbaab54)), closes [#3572](https://github.com/ionic-team/capacitor/issues/3572)
+
+
+### Chores
+
+* refactor(android): remove unused interaction listener on BridgeFragment (#3552) ([fae50b6](https://github.com/ionic-team/capacitor/commit/fae50b6)), closes [#3552](https://github.com/ionic-team/capacitor/issues/3552)
+
+
+
 ## [2.4.1](https://github.com/ionic-team/capacitor/compare/2.4.0...2.4.1) (2020-09-09)
 
 
