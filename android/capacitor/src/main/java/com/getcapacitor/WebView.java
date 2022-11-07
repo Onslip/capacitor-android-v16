@@ -465,14 +465,6 @@ public class WebView {
             }
         }
 
-        public void setAppCacheEnabled(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setAppCacheEnabled(enabled);
-            } else {
-                // No Crosswalk API for this
-            }
-        }
-
         public void setMediaPlaybackRequiresUserGesture(boolean enabled) {
             if (webSettings != null) {
                 webSettings.setMediaPlaybackRequiresUserGesture(enabled);
