@@ -30,10 +30,10 @@ tasks.withType(Javadoc).all { enabled = false }
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 29
+    compileSdkVersion project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 33
     defaultConfig {
         minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 16
-        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 29
+        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 33
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -77,7 +77,7 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation "org.apache.cordova:framework:$cordovaAndroidVersion"
     testImplementation 'org.json:json:20140107'
-    testImplementation 'org.mockito:mockito-inline:2.25.1'
+    testImplementation 'org.mockito:mockito-inline:3.11.2'
     implementation "$capacitorXWalkModule"
 }
 
