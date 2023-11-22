@@ -78,6 +78,6 @@ dependencies {
     implementation "org.apache.cordova:framework:$cordovaAndroidVersion"
     testImplementation 'org.json:json:20140107'
     testImplementation 'org.mockito:mockito-inline:3.11.2'
-    implementation "$capacitorXWalkModule"
+    compileOnly capacitorXWalkModule
 }
 
