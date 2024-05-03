@@ -1,7 +1,7 @@
 ext {
     minSdkVersion = 16
-    compileSdkVersion = 33
-    targetSdkVersion = 33
+    compileSdkVersion = 34
+    targetSdkVersion = 34
     androidxAppCompatVersion = '1.1.0'
     androidxCoreVersion =  '1.2.0'
     androidxMaterialVersion =  '1.1.0-rc02'
@@ -10,9 +10,9 @@ ext {
     androidxExifInterfaceVersion = '1.2.0'
     firebaseMessagingVersion =  '20.1.2'
     playServicesLocationVersion =  '17.0.0'
-    junitVersion =  '4.12'
-    androidxJunitVersion =  '1.1.1'
-    androidxEspressoCoreVersion =  '3.2.0'
+    junitVersion =  '4.13.2'
+    androidxJunitVersion =  '1.1.5'
+    androidxEspressoCoreVersion =  '3.5.1'
     cordovaAndroidVersion =  '7.0.0'
     capacitorXWalkModule = 'org.xwalk:xwalk_shared_library:23.53.589.4'
 }

@@ -5,7 +5,7 @@ ext {
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.1'
@@ -15,10 +15,11 @@ buildscript {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 33
+    namespace 'capacitor.cordova.android.plugins'
+    compileSdkVersion project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
     defaultConfig {
         minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 16
-        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 33
+        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
         versionCode 1
         versionName "1.0"
     }
@@ -33,8 +34,10 @@ android {
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
+    maven {
+        url 'https://pkg.o.onslip.net/jcenter.bintray.com'
+    }
     flatDir{
         dirs 'src/main/libs', 'libs'
     }

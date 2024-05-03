@@ -1,11 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    namespace 'com.getcapacitor.myapp'
+    compileSdkVersion 34
     defaultConfig {
         applicationId "com.getcapacitor.app"
         minSdkVersion 16
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

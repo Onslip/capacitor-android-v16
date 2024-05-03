@@ -418,7 +418,7 @@ export async function writeCordovaAndroidManifest(cordovaPlugins: Plugin[], conf
   let cleartextString = 'android:usesCleartextTraffic="true"';
   let cleartext = config.app.extConfig.server?.cleartext && !applicationXMLAttributes.includes(cleartextString) ? cleartextString : '';
   let content = `<?xml version='1.0' encoding='utf-8'?>
-<manifest package="capacitor.android.plugins"
+<manifest
 xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:amazon="http://schemas.amazon.com/apk/res/android">
 <application ${applicationXMLAttributes.join('\n')} ${cleartext}>

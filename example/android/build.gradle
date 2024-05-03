@@ -4,7 +4,7 @@ buildscript {
 
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.1'
@@ -17,9 +17,9 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
         maven {
-            url 'https://download.01.org/crosswalk/releases/crosswalk/android/maven2'
+            url 'https://pkg.o.onslip.net/download.01.org/crosswalk/releases/crosswalk/android/maven2'
         }
     }
 }
