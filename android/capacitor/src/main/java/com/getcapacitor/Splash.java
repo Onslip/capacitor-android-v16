@@ -240,7 +240,7 @@ public class Splash {
 
     buildViews(a, config);
 
-    if (isVisible) {
+    if (isVisible && splashListener != null) {
       splashListener.completed();
       return;
     }
