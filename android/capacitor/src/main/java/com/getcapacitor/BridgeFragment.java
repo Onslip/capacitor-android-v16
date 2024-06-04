@@ -80,18 +80,11 @@ public class BridgeFragment extends Fragment {
             startDir = getArguments().getString(ARG_START_DIR);
         }
 
-        View view = getView().findViewById(R.id.webview);
-
-        if (view instanceof android.webkit.WebView) {
-          webView = new WebView((android.webkit.WebView) view);
-        }
-        else {
-          webView = new WebView((org.xwalk.core.XWalkView) view);
-        }
+        webView = WebView.create(getView().findViewById(R.id.webview));
 
         cordovaInterface = new MockCordovaInterfaceImpl(this.getActivity());
         if (savedInstanceState != null) {
-          cordovaInterface.restoreInstanceState(savedInstanceState);
+            cordovaInterface.restoreInstanceState(savedInstanceState);
         }
 
         mockWebView = new MockCordovaWebViewImpl(getActivity().getApplicationContext());

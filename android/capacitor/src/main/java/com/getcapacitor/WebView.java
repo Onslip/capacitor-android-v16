@@ -1,6 +1,5 @@
 package com.getcapacitor;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -8,556 +7,138 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.*;
-import androidx.annotation.Nullable;
-
-import org.xwalk.core.*;
 
 import java.io.InputStream;
 import java.util.Map;
 
-public class WebView {
-    private android.webkit.WebView webView;
-    private XWalkView xwalkView;
+import androidx.annotation.NonNull;
 
-    public static String getWebViewVersion(android.webkit.WebView webView) {
-        return getChromeVersion(webView.getSettings().getUserAgentString());
-    }
-
-    public static String getXWalkVersion(XWalkView xwalkView) {
-        return getChromeVersion(xwalkView.getSettings().getUserAgentString());
-    }
-
-    public static String getChromeVersion(String userAgent) {
+public interface WebView {
+    static String getChromeVersion(String userAgent) {
         String chromeVer = userAgent.replaceFirst(".*Chrome/([.0-9]+).*", "$1");
 
         return userAgent.equals(chromeVer) ? "0.0.0.0" : chromeVer;
     }
 
-    public WebView(android.webkit.WebView webView) {
-        Logger.info("Using System WebView " + getWebViewVersion(webView));
-
-        this.webView = webView;
-    }
-
-    public WebView(XWalkView xwalkView) {
-        Logger.info("Using XWalk WebView " + getXWalkVersion(xwalkView));
-
-        this.xwalkView = xwalkView;
-    }
-
-    public void destroy() {
-        if (webView != null) {
-            webView.destroy();
+    static WebView create(View view) {
+        if (view instanceof android.webkit.WebView) {
+            return new WebViewSystemImpl((android.webkit.WebView) view);
+        } else if (view instanceof org.xwalk.core.XWalkView) {
+            return new WebViewXWalkImpl((org.xwalk.core.XWalkView) view);
         } else {
-            xwalkView.onDestroy();
+            throw new UnsupportedOperationException("Unsupported WebView type: " + view.getClass().getName());
         }
     }
 
-    public void removeAllViews() {
-        if (webView != null) {
-            webView.removeAllViews();
-        } else {
-            xwalkView.removeAllViews();
-        }
+    void destroy();
+
+    default void removeAllViews() {
+        getView().removeAllViews();
     }
 
-    public View getView() {
-        return webView != null ? webView : xwalkView;
-    }
+    ViewGroup getView();
 
-    public void setWebContentsDebuggingEnabled(boolean enabled) {
-        if (webView != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                android.webkit.WebView.setWebContentsDebuggingEnabled(enabled);
-            }
-        } else {
-            XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, enabled);
-        }
-    }
+    void setWebContentsDebuggingEnabled(boolean enabled);
 
-    public void post(Runnable runnable) {
+    default void post(Runnable runnable) {
         getView().post(runnable);
     }
 
-    public String getUrl() {
-        return webView != null ? webView.getUrl() : xwalkView.getUrl();
+    String getUrl();
+
+    default Context getContext() {
+        return getView().getContext();
     }
 
-    public Context getContext() {
-        return webView != null ? webView.getContext() : xwalkView.getContext();
-    }
+    void setWebChromeClient(final WebChromeClient client);
 
-    public void setWebChromeClient(final WebChromeClient client) {
-        if (webView != null) {
-            webView.setWebChromeClient(new android.webkit.WebChromeClient() {
-                @Override public void onShowCustomView(View view, android.webkit.WebChromeClient.CustomViewCallback callback) {
-                    client.onShowCustomView(view, new com.getcapacitor.WebView.CustomViewCallback(callback));
-                }
+    void setWebViewClient(final WebViewClient client);
 
-                @Override public void onHideCustomView() {
-                    client.onHideCustomView();
-                }
+    void onPause();
 
-                @Override public boolean onJsAlert(android.webkit.WebView view, String url, String message, android.webkit.JsResult result) {
-                    return client.onJsAlert(WebView.this, url, message, new JsResult(result));
-                }
+    void onResume();
 
-                @Override public boolean onJsConfirm(android.webkit.WebView view, String url, String message, android.webkit.JsResult result) {
-                    return client.onJsConfirm(WebView.this, url, message, new JsResult(result));
-                }
+    void pauseTimers();
 
-                @Override public boolean onJsPrompt(android.webkit.WebView view, String url, String message, String defaultValue, android.webkit.JsPromptResult result) {
-                    return client.onJsPrompt(WebView.this, url, message, defaultValue, new JsPromptResult(result));
-                }
+    void resumeTimers();
 
-                @Override public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-                    client.onGeolocationPermissionsShowPrompt(origin, callback);
-                }
+    void loadUrl(String url);
 
-                @Override public void onPermissionRequest(PermissionRequest request) {
-                    client.onPermissionRequest(request);
-                }
+    boolean canGoBack();
 
-                @Override public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                    return client.onConsoleMessage(consoleMessage);
-                }
+    void goBack();
 
-                @Override public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                    return client.onShowFileChooser(WebView.this, filePathCallback, new WebChromeClient.FileChooserParams(fileChooserParams));
-                }
-            });
-        }
-        else {
-            xwalkView.setUIClient(new XWalkUIClient(xwalkView) {
-                @Override public void onShowCustomView(View view, org.xwalk.core.CustomViewCallback callback) {
-                    client.onShowCustomView(view, new com.getcapacitor.WebView.CustomViewCallback(callback));
-                }
+    void evaluateJavascript(String script, ValueCallback<String> resultCallback);
 
-                @Override public void onHideCustomView() {
-                    client.onHideCustomView();
-                }
-
-                @Override public boolean onJsAlert(XWalkView view, String url, String message, XWalkJavascriptResult result) {
-                    return client.onJsAlert(WebView.this, url, message, new JsResult(result));
-                }
-
-                @Override public boolean onJsConfirm(XWalkView view, String url, String message, XWalkJavascriptResult result) {
-                    return client.onJsConfirm(WebView.this, url, message, new JsResult(result));
-                }
-
-                @Override public boolean onJsPrompt(XWalkView view, String url, String message, String defaultValue, XWalkJavascriptResult result) {
-                    return client.onJsPrompt(WebView.this, url, message, defaultValue, new JsPromptResult(result));
-                }
-
-                @Override public boolean onConsoleMessage(XWalkView view, String message, int lineNumber, String sourceId, ConsoleMessageType messageType) {
-                    ConsoleMessage.MessageLevel level = ConsoleMessage.MessageLevel.TIP;
-
-                    switch (messageType) {
-                        case ERROR:   level = ConsoleMessage.MessageLevel.ERROR;   break;
-                        case LOG:     level = ConsoleMessage.MessageLevel.LOG;     break;
-                        case INFO:    level = ConsoleMessage.MessageLevel.TIP;     break;
-                        case WARNING: level = ConsoleMessage.MessageLevel.WARNING; break;
-                    }
-
-                    if (client.onConsoleMessage(new ConsoleMessage(message, sourceId, lineNumber, level))) {
-                        return true;
-                    }
-                    else {
-                        return super.onConsoleMessage(view, message, lineNumber, sourceId, messageType);
-                    }
-                }
-
-                @Override public void openFileChooser(XWalkView view, final ValueCallback<Uri> uploadFile, final String acceptType, final String capture) {
-                    if (!client.onShowFileChooser(WebView.this, new ValueCallback<Uri[]>() {
-                        @Override public void onReceiveValue(Uri[] value) {
-                            if (value == null || value.length == 0) {
-                                uploadFile.onReceiveValue(null);
-                            }
-                            else if (value.length == 1) {
-                                uploadFile.onReceiveValue(value[0]);
-                            } else {
-                                Logger.error("Expected a single file from FileChooser, got " + value.length);
-                                uploadFile.onReceiveValue(value[0]);
-                            }
-                        }
-                    }, new WebChromeClient.FileChooserParams(acceptType, capture))) {
-                        super.openFileChooser(view, uploadFile, acceptType, capture);
-                    }
-                }
-            });
-        }
-    }
-
-    public void setWebViewClient(final WebViewClient client) {
-        if (webView != null) {
-            webView.setWebViewClient(new android.webkit.WebViewClient() {
-                @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view, String url) {
-                    return client.shouldOverrideUrlLoading(WebView.this, url);
-                }
-
-                @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view, android.webkit.WebResourceRequest request) {
-                    return client.shouldOverrideUrlLoading(WebView.this, new WebResourceRequest(request));
-                }
-
-                @Nullable @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view, String url) {
-                    return client.shouldInterceptRequest(WebView.this, url);
-                }
-
-                @Nullable @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view, android.webkit.WebResourceRequest request) {
-                    return client.shouldInterceptRequest(WebView.this, new WebResourceRequest(request));
-                }
-            });
-        }
-        else {
-            xwalkView.setResourceClient(new XWalkResourceClient(xwalkView) {
-                @Override public android.webkit.WebResourceResponse shouldInterceptLoadRequest(XWalkView view, String url) {
-                    return client.shouldInterceptRequest(WebView.this, url);
-                }
-
-                @Override public XWalkWebResourceResponse shouldInterceptLoadRequest(XWalkView view, final XWalkWebResourceRequest request) {
-                    WebResourceResponse response = client.shouldInterceptRequest(WebView.this, new WebResourceRequest(request));
-
-                    if (response != null) {
-                        return createXWalkWebResourceResponse(response.getMimeType(), response.getEncoding(), response.getData(),
-                                                              response.getStatusCode(), response.getReasonPhrase(), response.getResponseHeaders());
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override public boolean shouldOverrideUrlLoading(XWalkView view, String url) {
-                    return client.shouldOverrideUrlLoading(WebView.this, url);
-                }
-            });
-        }
-    }
-
-    public void onPause() {
-        if (webView != null) {
-            webView.onPause();
-        } else {
-            // No Crosswalk API for this
-        }
-    }
-
-    public void onResume() {
-        if (webView != null) {
-            webView.onResume();
-        } else {
-            // No Crosswalk API for this
-        }
-    }
-
-    public void pauseTimers() {
-        if (webView != null) {
-            webView.pauseTimers();
-        } else {
-            xwalkView.pauseTimers();
-        }
-    }
-
-    public void resumeTimers() {
-        if (webView != null) {
-            webView.resumeTimers();
-        } else {
-            xwalkView.resumeTimers();
-        }
-    }
-
-    public void loadUrl(String url) {
-        if (webView != null) {
-            webView.loadUrl(url);
-        } else {
-            xwalkView.loadUrl(url);
-        }
-    }
-
-    public boolean canGoBack() {
-        if (webView != null) {
-            return webView.canGoBack();
-        } else {
-            return xwalkView.getNavigationHistory().canGoBack();
-        }
-    }
-
-    public void goBack() {
-        if (webView != null) {
-            webView.goBack();
-        } else {
-            xwalkView.getNavigationHistory().navigate(XWalkNavigationHistory.Direction.BACKWARD, 1);
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP) public void evaluateJavascript(String script, ValueCallback<String> resultCallback) {
-        if (webView != null) {
-            webView.evaluateJavascript(script, resultCallback);
-        } else {
-            xwalkView.evaluateJavascript(script, resultCallback);
-        }
-    }
-
-    @SuppressLint({"AddJavascriptInterface", "JavascriptInterface"}) public void addJavascriptInterface(Object object, String name) {
-        if (webView != null) {
-            webView.addJavascriptInterface(object, name);
-        }
-        else {
-            xwalkView.addJavascriptInterface(object, name);
-        }
-    }
+    void addJavascriptInterface(Object object, String name);
 
     // Some old Android devices crashes when a method is annotated with
     // @android.webkit.JavascriptInterface, so we use a special method to add the MessageHandler.
-    @SuppressLint("AddJavascriptInterface") public void addMessageHandler(final MessageHandler messageHandler, String name) {
-        if (webView != null) {
-            webView.addJavascriptInterface(new Object() {
-                  @android.webkit.JavascriptInterface public void postMessage(String jsonStr) {
-                      messageHandler.postMessage(jsonStr);
-                  }
-            }, name);
-        }
-        else {
-            xwalkView.addJavascriptInterface(new Object() {
-                @org.xwalk.core.JavascriptInterface public void postMessage(String jsonStr) {
-                    messageHandler.postMessage(jsonStr);
-                }
-            }, name);
-        }
+    void addMessageHandler(final MessageHandler messageHandler, String name);
+
+    CookieManager getCookieManager();
+
+    WebSettings getSettings();
+
+    interface CookieManager {
+        Object getCookieManager();
+
+        void setAcceptCookie(boolean accept);
+
+        void setAcceptFileSchemeCookies(boolean accept);
+
+        void setAcceptThirdPartyCookies(WebView webView, boolean accept);
+
+        void setCookie(String url, String value);
+
+        String getCookie(String url);
+
+        void removeAllCookie();
+
+        void flush();
     }
 
-    public CookieManager getCookieManager() {
-        return new CookieManager();
+    interface WebSettings {
+        int MIXED_CONTENT_ALWAYS_ALLOW = 0;
+
+        Object getWebSettings();
+
+        void setJavaScriptEnabled(boolean enabled);
+
+        void setDomStorageEnabled(boolean enabled);
+
+        void setGeolocationEnabled(boolean enabled);
+
+        void setDatabaseEnabled(boolean enabled);
+
+        void setMediaPlaybackRequiresUserGesture(boolean enabled);
+
+        void setJavaScriptCanOpenWindowsAutomatically(boolean enabled);
+
+        void setMixedContentMode(int mode);
+
+        void setUserAgentString(String ua);
+
+        String getUserAgentString();
     }
 
-    public WebSettings getSettings() {
-        return new WebSettings();
+    interface WebResourceRequest {
+        Uri getUrl();
+
+        boolean isForMainFrame();
+
+        boolean isRedirect();
+
+        boolean hasGesture();
+
+        String getMethod();
+
+        Map<String, String> getRequestHeaders();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP) public class CookieManager {
-        private android.webkit.CookieManager cookieManager;
-        private XWalkCookieManager xwalkCookieManager;
-
-        private CookieManager() {
-            if (webView != null) {
-                cookieManager = android.webkit.CookieManager.getInstance();
-            } else {
-                xwalkCookieManager = new XWalkCookieManager();
-            }
-        }
-
-        public Object getCookieManager() {
-            if (webView != null) {
-                return cookieManager;
-            } else {
-                return xwalkCookieManager;
-            }
-        }
-
-        public void setAcceptCookie(boolean accept) {
-            if (cookieManager != null) {
-                cookieManager.setAcceptCookie(accept);
-            } else {
-                xwalkCookieManager.setAcceptCookie(accept);
-            }
-        }
-
-        public void setAcceptFileSchemeCookies(boolean accept) {
-            if (cookieManager != null) {
-                cookieManager.setAcceptFileSchemeCookies(accept);
-            } else {
-                xwalkCookieManager.setAcceptFileSchemeCookies(accept);
-            }
-        }
-
-        public void setAcceptThirdPartyCookies(WebView webView, boolean accept) {
-            if (cookieManager != null) {
-                cookieManager.setAcceptThirdPartyCookies(webView.webView, accept);
-            } else {
-                // No Crosswalk API for this
-            }
-        }
-
-        public void setCookie(String url, String value) {
-            if (cookieManager != null) {
-                cookieManager.setCookie(url, value);
-            } else {
-                xwalkCookieManager.setCookie(url, value);
-            }
-        }
-
-        public String getCookie(String url) {
-            if (cookieManager != null) {
-                return cookieManager.getCookie(url);
-            } else {
-                return xwalkCookieManager.getCookie(url);
-            }
-        }
-
-        public void removeAllCookie() {
-            if (cookieManager != null) {
-                cookieManager.removeAllCookie();
-            } else {
-                xwalkCookieManager.removeAllCookie();
-            }
-        }
-
-        public void flush() {
-            if (cookieManager != null) {
-                cookieManager.flush();
-            } else {
-                xwalkCookieManager.flushCookieStore();
-            }
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP) public class WebSettings {
-        android.webkit.WebSettings webSettings;
-        XWalkSettings xwalkSettings;
-
-        public static final int MIXED_CONTENT_ALWAYS_ALLOW = 0;
-
-        private WebSettings() {
-            if (webView != null) {
-                webSettings = webView.getSettings();
-            }
-            else {
-                xwalkSettings = xwalkView.getSettings();
-            }
-        }
-
-        public Object getWebSettings() {
-            if (webView != null) {
-                return webSettings;
-            } else {
-                return xwalkSettings;
-            }
-        }
-
-        public void setJavaScriptEnabled(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setJavaScriptEnabled(enabled);
-            } else {
-                xwalkSettings.setJavaScriptEnabled(enabled);
-            }
-        }
-
-        public void setDomStorageEnabled(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setDomStorageEnabled(enabled);
-            } else {
-                xwalkSettings.setDomStorageEnabled(enabled);
-            }
-        }
-
-        public void setGeolocationEnabled(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setGeolocationEnabled(enabled);
-            } else {
-                // No Crosswalk API for this
-            }
-        }
-
-        public void setDatabaseEnabled(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setDatabaseEnabled(enabled);
-            } else {
-                xwalkSettings.setDatabaseEnabled(enabled);
-            }
-        }
-
-        public void setMediaPlaybackRequiresUserGesture(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setMediaPlaybackRequiresUserGesture(enabled);
-            } else {
-                xwalkSettings.setMediaPlaybackRequiresUserGesture(enabled);
-            }
-        }
-
-        public void setJavaScriptCanOpenWindowsAutomatically(boolean enabled) {
-            if (webSettings != null) {
-                webSettings.setJavaScriptCanOpenWindowsAutomatically(enabled);
-            } else {
-                xwalkSettings.setJavaScriptCanOpenWindowsAutomatically(enabled);
-            }
-        }
-
-        public void setMixedContentMode(int mode) {
-            if (webSettings != null) {
-                webSettings.setMixedContentMode(mode);
-            } else {
-                // No Crosswalk API for this
-            }
-        }
-
-        public void setUserAgentString(String ua) {
-            if (webSettings != null) {
-                webSettings.setUserAgentString(ua);
-            } else {
-                xwalkSettings.setUserAgentString(ua);
-            }
-        }
-
-        public String getUserAgentString() {
-            if (webSettings != null) {
-                return webSettings.getUserAgentString();
-            } else {
-                return xwalkSettings.getUserAgentString();
-            }
-        }
-    }
-
-    public static class WebResourceRequest {
-        private Uri uri;
-        boolean isForMainFrame;
-        boolean isRedirect;
-        boolean hasGesture;
-        String method;
-        Map<String, String> requestHeaders;
-
-        @TargetApi(Build.VERSION_CODES.LOLLIPOP) private WebResourceRequest(android.webkit.WebResourceRequest request) {
-            uri            = request.getUrl();
-            isForMainFrame = request.isForMainFrame();
-            isRedirect     = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? request.isRedirect() : false;
-            hasGesture     = request.hasGesture();
-            method         = request.getMethod();
-            requestHeaders = request.getRequestHeaders();
-        }
-
-        private WebResourceRequest(XWalkWebResourceRequest request) {
-            uri            = request.getUrl();
-            isForMainFrame = request.isForMainFrame();
-            isRedirect     = false; // No Crosswalk API for this
-            hasGesture     = request.hasGesture();
-            method         = request.getMethod();
-            requestHeaders = request.getRequestHeaders();
-        }
-
-        public Uri getUrl() {
-            return uri;
-        }
-
-        public boolean isForMainFrame() {
-            return isForMainFrame;
-        }
-
-        public boolean isRedirect() {
-            return isRedirect;
-        }
-
-        public boolean hasGesture() {
-            return hasGesture;
-        }
-
-        public String getMethod() {
-            return method;
-        }
-
-        public Map<String, String> getRequestHeaders() {
-            return requestHeaders;
-        }
-    }
-
-    public static class WebResourceResponse extends android.webkit.WebResourceResponse {
+    class WebResourceResponse extends android.webkit.WebResourceResponse {
         private String reasonPhrase;
         private Map<String, String> responseHeaders;
         private int statusCode;
@@ -605,7 +186,7 @@ public class WebView {
             }
         }
 
-        @Override public void setStatusCodeAndReasonPhrase(int statusCode, String reasonPhrase) {
+        @Override public void setStatusCodeAndReasonPhrase(int statusCode, @NonNull String reasonPhrase) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 super.setStatusCodeAndReasonPhrase(statusCode, reasonPhrase);
             } else {
@@ -615,7 +196,7 @@ public class WebView {
         }
     }
 
-    public static class WebViewClient {
+    class WebViewClient {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             return shouldOverrideUrlLoading(view, request.getUrl().toString());
         }
@@ -633,7 +214,7 @@ public class WebView {
         }
     }
 
-    public static class WebChromeClient {
+    class WebChromeClient {
         public void onShowCustomView(View view, CustomViewCallback callback) {
         }
 
@@ -672,11 +253,11 @@ public class WebView {
             private String acceptType;
             private String capture;
 
-            private FileChooserParams(android.webkit.WebChromeClient.FileChooserParams params) {
+            protected FileChooserParams(android.webkit.WebChromeClient.FileChooserParams params) {
                 fileChooserParams = params;
             }
 
-            private FileChooserParams(String acceptType, String capture) {
+            protected FileChooserParams(String acceptType, String capture) {
                 this.acceptType = acceptType;
                 this.capture    = capture;
             }
@@ -754,71 +335,17 @@ public class WebView {
         }
     }
 
-    public static class CustomViewCallback {
-        protected android.webkit.WebChromeClient.CustomViewCallback customViewCallback;
-        protected org.xwalk.core.CustomViewCallback xwalkCallback;
-
-        private CustomViewCallback(android.webkit.WebChromeClient.CustomViewCallback callback) {
-            customViewCallback = callback;
-        }
-
-        private CustomViewCallback(org.xwalk.core.CustomViewCallback callback) {
-            xwalkCallback = callback;
-        }
-
-        public void onCustomViewHidden() {
-            if (customViewCallback != null) {
-                customViewCallback.onCustomViewHidden();
-            } else {
-                xwalkCallback.onCustomViewHidden();
-            }
-        }
+    interface CustomViewCallback {
+        void onCustomViewHidden();
     }
 
-    public static class JsResult {
-        protected android.webkit.JsResult jsResult;
-        protected XWalkJavascriptResult xwalkResult;
+    interface JsResult {
+        void cancel();
 
-        private JsResult(android.webkit.JsResult result) {
-            jsResult = result;
-        }
-
-        private JsResult(XWalkJavascriptResult result) {
-            xwalkResult = result;
-        }
-
-        public void cancel() {
-            if (jsResult != null) {
-                jsResult.cancel();
-            } else {
-                xwalkResult.cancel();
-            }
-        }
-
-        public void confirm() {
-            if (jsResult != null) {
-                jsResult.confirm();
-            } else {
-                xwalkResult.confirm();
-            }
-        }
+        void confirm();
     }
 
-    public static class JsPromptResult extends JsResult {
-        private JsPromptResult(android.webkit.JsPromptResult result) {
-            super(result);
-        }
-
-        private JsPromptResult(XWalkJavascriptResult result) {
-            super(result);
-        }
-
-        public void confirm(String result) {
-            if (jsResult != null) {
-                ((android.webkit.JsPromptResult) jsResult).confirm(result);
-            } else {
-                xwalkResult.confirmWithResult(result);
-            }
-        }
+    interface JsPromptResult extends JsResult {
+        void confirm(String result);
     }
 }
