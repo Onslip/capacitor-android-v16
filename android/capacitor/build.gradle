@@ -12,6 +12,7 @@ ext {
     androidxEspressoCoreVersion =  project.hasProperty('androidxEspressoCoreVersion') ? rootProject.ext.androidxEspressoCoreVersion : '3.5.1'
     cordovaAndroidVersion =  project.hasProperty('cordovaAndroidVersion') ? rootProject.ext.cordovaAndroidVersion : '7.0.0'
     capacitorXWalkModule = project.hasProperty('capacitorXWalkModule') ? rootProject.ext.capacitorXWalkModule : 'org.xwalk:xwalk_shared_library:23.53.589.4'
+    capacitorGeckoModule = project.hasProperty('capacitorGeckoModule') ? rootProject.ext.capacitorGeckoModule : 'org.mozilla.geckoview:geckoview:125.0.20240425211020'
 }
 
 
@@ -63,6 +64,9 @@ repositories {
     maven {
         url 'https://pkg.o.onslip.net/download.01.org/crosswalk/releases/crosswalk/android/maven2'
     }
+    maven {
+        url 'https://maven.mozilla.org/maven2/'
+    }
 }
 
 dependencies {
@@ -82,5 +86,6 @@ dependencies {
     testImplementation 'org.json:json:20140107'
     testImplementation 'org.mockito:mockito-inline:3.11.2'
     compileOnly capacitorXWalkModule
+    compileOnly capacitorGeckoModule
 }
 

@@ -22,11 +22,13 @@ public interface WebView {
         return userAgent.equals(chromeVer) ? "0.0.0.0" : chromeVer;
     }
 
-    static WebView create(View view) {
+    public static WebView create(View view) {
         if (view instanceof android.webkit.WebView) {
             return new WebViewSystemImpl((android.webkit.WebView) view);
         } else if (view instanceof org.xwalk.core.XWalkView) {
             return new WebViewXWalkImpl((org.xwalk.core.XWalkView) view);
+        } else if (view instanceof org.mozilla.geckoview.GeckoView) {
+            return new WebViewGeckoImpl((org.mozilla.geckoview.GeckoView) view);
         } else {
             throw new UnsupportedOperationException("Unsupported WebView type: " + view.getClass().getName());
         }

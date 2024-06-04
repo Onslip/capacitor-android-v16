@@ -15,4 +15,5 @@ ext {
     androidxEspressoCoreVersion =  '3.5.1'
     cordovaAndroidVersion =  '7.0.0'
     capacitorXWalkModule = 'org.xwalk:xwalk_shared_library:23.53.589.4'
+    capacitorGeckoModule = 'org.mozilla.geckoview:geckoview:125.0.20240425211020'
 }
