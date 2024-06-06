@@ -22,18 +22,20 @@ public class WebViewSystemImpl implements WebView {
         return WebView.getChromeVersion(webView.getSettings().getUserAgentString());
     }
 
-    public static BridgeActivity.InitializationHandler initializer(BridgeActivity bridgeActivity, IntConsumer onInitialized) {
-        return new BridgeActivity.InitializationHandler(bridgeActivity) {
-            @Override public void initialize() {
-                getListener().onInitStarted();
-                getListener().onCompleted();
-                onInitialized.accept(R.layout.bridge_layout_main);
-            }
+    public static class Initializer implements BridgeActivity.InitializationFactory {
+        @Override public BridgeActivity.InitializationHandler create(BridgeActivity bridgeActivity) {
+            return new BridgeActivity.InitializationHandler(bridgeActivity) {
+                @Override public void initialize(OnInitialized onInitialized) {
+                    getListener().onInitStarted();
+                    getListener().onCompleted();
+                    onInitialized.contentView(R.layout.bridge_layout_main);
+                }
 
-            @Override public void cancel() {
-                // Nothing to do
-            }
-        };
+                @Override public void cancel() {
+                    // Nothing to do
+                }
+            };
+        }
     }
 
     public WebViewSystemImpl(android.webkit.WebView webView) {

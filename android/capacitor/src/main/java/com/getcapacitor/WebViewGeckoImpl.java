@@ -46,18 +46,20 @@ public class WebViewGeckoImpl implements WebView {
     private @Nullable WebChromeClient webChromeClient;
     private @Nullable WebViewClient webViewClient;
 
-    public static BridgeActivity.InitializationHandler initializer(BridgeActivity bridgeActivity, IntConsumer onInitialized) {
-        return new BridgeActivity.InitializationHandler(bridgeActivity) {
-            @Override public void initialize() {
-                getListener().onInitStarted();
-                getListener().onCompleted();
-                onInitialized.accept(R.layout.bridge_layout_gecko);
-            }
+    public static class Initializer implements BridgeActivity.InitializationFactory {
+        @Override public BridgeActivity.InitializationHandler create(BridgeActivity bridgeActivity) {
+            return new BridgeActivity.InitializationHandler(bridgeActivity) {
+                @Override public void initialize(OnInitialized onInitialized) {
+                    getListener().onInitStarted();
+                    getListener().onCompleted();
+                    onInitialized.contentView(R.layout.bridge_layout_gecko);
+                }
 
-            @Override public void cancel() {
-                // Nothing to do
-            }
-        };
+                @Override public void cancel() {
+                    // Nothing to do
+                }
+            };
+        }
     }
 
     public WebViewGeckoImpl(GeckoView geckoView) {

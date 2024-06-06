@@ -21,8 +21,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.BiFunction;
-import java.util.function.IntConsumer;
 
 public class BridgeActivity extends AppCompatActivity {
   protected Bridge bridge;
@@ -36,7 +34,7 @@ public class BridgeActivity extends AppCompatActivity {
   private JSONObject config;
 
   private String webViewResourceUrl;
-  private BiFunction<BridgeActivity, IntConsumer, InitializationHandler> webViewInitializer = WebViewSystemImpl::initializer;
+  private InitializationFactory webViewInitializer = new WebViewSystemImpl.Initializer();
   private WebViewInitListener webViewInitListener = new WebViewInitListener();
   private InitializationHandler initializationHandler;
   private ArrayList<Runnable> initializationReadyQueue = new ArrayList<Runnable>();
@@ -64,7 +62,8 @@ public class BridgeActivity extends AppCompatActivity {
     setTheme(getResources().getIdentifier("AppTheme_NoActionBar", "style", getPackageName()));
     setTheme(R.style.AppTheme_NoActionBar);
 
-    initializationHandler = webViewInitializer.apply(this, (int viewID) -> {
+    initializationHandler = webViewInitializer.create(this);
+    initializationHandler.initialize((int viewID) -> {
       setContentView(viewID);
       this.load(savedInstanceState);
     });
@@ -165,8 +164,6 @@ public class BridgeActivity extends AppCompatActivity {
   public void onResume() {
     super.onResume();
 
-    initializationHandler.initialize();
-
     whenInitialized(() -> {
       fireAppStateChanged(true);
 
@@ -218,7 +215,11 @@ public class BridgeActivity extends AppCompatActivity {
   @Override
   public void onDestroy() {
     super.onDestroy();
-    this.bridge.onDestroy();
+
+    if (this.bridge != null) {
+      this.bridge.onDestroy();
+    }
+
     if (this.mockWebView != null) {
       mockWebView.handleDestroy();
     }
@@ -278,7 +279,15 @@ public class BridgeActivity extends AppCompatActivity {
     pluginEntries = parser.getPluginEntries();
   }
 
+  public interface InitializationFactory {
+    InitializationHandler create(BridgeActivity bridgeActivity);
+  }
+
   public static abstract class InitializationHandler {
+    public interface OnInitialized {
+      void contentView(int view);
+    }
+
     private final BridgeActivity bridgeActivity;
 
     protected InitializationHandler(BridgeActivity bridgeActivity) {
@@ -297,7 +306,7 @@ public class BridgeActivity extends AppCompatActivity {
       return bridgeActivity.webViewResourceUrl;
     }
 
-    public abstract void initialize();
+    public abstract void initialize(OnInitialized onInitialized);
     public abstract void cancel();
   }
 
@@ -327,7 +336,7 @@ public class BridgeActivity extends AppCompatActivity {
     }
   }
 
-  protected void setWebViewInitializer(BiFunction<BridgeActivity, IntConsumer, InitializationHandler> initializer) {
+  protected void setWebViewInitializer(InitializationFactory initializer) {
     webViewInitializer = initializer;
   }
 

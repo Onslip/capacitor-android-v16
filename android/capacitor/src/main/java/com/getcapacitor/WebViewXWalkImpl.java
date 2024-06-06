@@ -19,23 +19,27 @@ public class WebViewXWalkImpl implements WebView {
         return WebView.getChromeVersion(xwalkView.getSettings().getUserAgentString());
     }
 
-    public static BridgeActivity.InitializationHandler initializer(BridgeActivity bridgeActivity, IntConsumer onInitialized) {
-        return new InitializationHandler(bridgeActivity, onInitialized);
+    public static class Initializer implements BridgeActivity.InitializationFactory {
+        @Override public BridgeActivity.InitializationHandler create(BridgeActivity bridgeActivity) {
+            return new InitializationHandler(bridgeActivity);
+        }
     }
 
     private static class InitializationHandler extends BridgeActivity.InitializationHandler implements XWalkInitializer.XWalkInitListener, XWalkUpdater.XWalkBackgroundUpdateListener {
         private final XWalkInitializer xwalkInitializer;
-        private final IntConsumer onInitialized;
+        private OnInitialized onInitialized;
         private XWalkUpdater xwalkUpdater;
 
-        private InitializationHandler(BridgeActivity bridgeActivity, IntConsumer onInitialized) {
+        private InitializationHandler(BridgeActivity bridgeActivity) {
             super(bridgeActivity);
 
             xwalkInitializer = new XWalkInitializer(this, bridgeActivity);
-            this.onInitialized = onInitialized;
         }
 
-        @Override public void initialize() {
+        @Override public void initialize(OnInitialized onInitialized) {
+            this.onInitialized = onInitialized;
+
+            Logger.info("Initializing XWalk");
             xwalkInitializer.initAsync();
         }
 
@@ -54,7 +58,7 @@ public class WebViewXWalkImpl implements WebView {
             Logger.info("XWalk initialization completed");
             getListener().onCompleted();
 
-            onInitialized.accept(R.layout.bridge_layout_xwalk);
+            onInitialized.contentView(R.layout.bridge_layout_xwalk);
         }
 
         @Override public void onXWalkInitCancelled() {
@@ -72,6 +76,7 @@ public class WebViewXWalkImpl implements WebView {
                     xwalkUpdater.setXWalkApkUrl(getResourceUrl());
                 }
 
+                Logger.info("Updating XWalk");
                 xwalkUpdater.updateXWalkRuntime();
             } else {
                 getListener().onFailed();
@@ -91,7 +96,7 @@ public class WebViewXWalkImpl implements WebView {
         @Override public void onXWalkUpdateCompleted() {
             Logger.info("XWalk update completed");
             getListener().onUpdateProgress(100);
-            initialize(); // Init again
+            initialize(onInitialized); // Init again
         }
 
         @Override public void onXWalkUpdateCancelled() {
