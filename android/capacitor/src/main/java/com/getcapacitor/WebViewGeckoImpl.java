@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.view.ViewGroup;
 import android.webkit.*;
 
+import com.getcapacitor.WebView.WebChromeClient.FileChooserParams;
 import com.getcapacitor.android.R;
 
 import androidx.annotation.NonNull;
@@ -85,35 +86,65 @@ public class WebViewGeckoImpl implements WebView {
                 currentCanGoBack = canGoBack;
             }
 
-            @Override public void onCanGoForward(@NonNull GeckoSession geckoSession, boolean b) {
-                Logger.info("NavigationDelegate.onCanGoForward " + b);
-            }
-
-            @Nullable @Override public GeckoResult<AllowOrDeny> onSubframeLoadRequest(@NonNull GeckoSession geckoSession, @NonNull LoadRequest loadRequest) {
-                Logger.info("NavigationDelegate.onSubframeLoadRequest " + loadRequest);
-                return null;
-            }
-
-            @Nullable @Override public GeckoResult<GeckoSession> onNewSession(@NonNull GeckoSession geckoSession, @NonNull String s) {
-                Logger.info("NavigationDelegate.onNewSession " + s);
-                return null;
-            }
-
-            @Nullable @Override public GeckoResult<String> onLoadError(@NonNull GeckoSession geckoSession, @Nullable String s, @NonNull WebRequestError webRequestError) {
-                Logger.info("NavigationDelegate.onLoadError " + s + " :: " + webRequestError);
-                return null;
-            }
-
             @Override public GeckoResult<AllowOrDeny> onLoadRequest(@NonNull GeckoSession session, @NonNull LoadRequest request) {
                 Logger.info("NavigationDelegate.onLoadRequest " + request);
 
-                if (webViewClient != null && webViewClient.shouldOverrideUrlLoading(WebViewGeckoImpl.this, request.uri)) {
-                    Logger.info("SHOULD OVERRIDE " + request);
-                    return GeckoResult.deny();
-                } else {
-                    Logger.info("SHOULD ALLOW " + request);
-                    return GeckoResult.allow();
-                }
+                return webViewClient != null && webViewClient.shouldOverrideUrlLoading(WebViewGeckoImpl.this, request.uri)
+                        ? GeckoResult.deny()
+                        : GeckoResult.allow();
+            }
+        });
+
+        geckoSession.setPromptDelegate(new PromptDelegate() {
+            @Nullable @Override public GeckoResult<PromptResponse> onAlertPrompt(@NonNull GeckoSession session, @NonNull AlertPrompt prompt) {
+                GeckoResult<PromptDelegate.PromptResponse> result = new GeckoResult<>();
+
+                return webChromeClient != null && webChromeClient.onJsAlert(WebViewGeckoImpl.this, currentURI, prompt.message, new JsResult() {
+                    @Override public void cancel()  { result.complete(prompt.dismiss()); }
+                    @Override public void confirm() { result.complete(prompt.dismiss()); }
+                }) ? result : null;
+            }
+
+            @Nullable @Override public GeckoResult<PromptResponse> onButtonPrompt(@NonNull GeckoSession session, @NonNull ButtonPrompt prompt) {
+                GeckoResult<PromptDelegate.PromptResponse> result = new GeckoResult<>();
+
+                return webChromeClient != null && webChromeClient.onJsConfirm(WebViewGeckoImpl.this, currentURI, prompt.message, new JsResult() {
+                    @Override public void cancel()  { result.complete(prompt.confirm(ButtonPrompt.Type.NEGATIVE)); }
+                    @Override public void confirm() { result.complete(prompt.confirm(ButtonPrompt.Type.POSITIVE)); }
+                }) ? result : null;
+            }
+
+            @Nullable @Override public GeckoResult<PromptResponse> onTextPrompt(@NonNull GeckoSession session, @NonNull TextPrompt prompt) {
+                GeckoResult<PromptDelegate.PromptResponse> result = new GeckoResult<>();
+
+                return webChromeClient != null && webChromeClient.onJsPrompt(WebViewGeckoImpl.this, currentURI, prompt.message, prompt.defaultValue, new JsPromptResult() {
+                    @Override public void cancel()             { result.complete(prompt.dismiss());     }
+                    @Override public void confirm()            { result.complete(prompt.confirm(""));   }
+                    @Override public void confirm(String text) { result.complete(prompt.confirm(text)); }
+                }) ? result : null;
+            }
+
+            @Nullable @Override public GeckoResult<PromptResponse> onFilePrompt(@NonNull GeckoSession session, @NonNull FilePrompt prompt) {
+                GeckoResult<PromptDelegate.PromptResponse> result = new GeckoResult<>();
+                FileChooserParams params = new FileChooserParams(
+                        prompt.title,
+                        prompt.type == FilePrompt.Type.SINGLE ? FileChooserParams.MODE_OPEN : FileChooserParams.MODE_OPEN_MULTIPLE,
+                        prompt.mimeTypes,
+                        prompt.capture != FilePrompt.Capture.NONE
+                ).resolveUris();
+
+                return webChromeClient != null && webChromeClient.onShowFileChooser(WebViewGeckoImpl.this, (uris) -> {
+                    if (uris == null || prompt.type == FilePrompt.Type.SINGLE && uris.length == 0) {
+                        result.complete(prompt.dismiss());
+                    } else {
+                        try {
+                            result.complete(prompt.confirm(getView().getContext(), uris));
+                        } catch (Exception ex) {
+                            Logger.error("Failed to confirm " + Arrays.toString(uris), ex);
+                            result.complete(prompt.dismiss());
+                        }
+                    }
+                }, params) ? result : null;
             }
         });
 

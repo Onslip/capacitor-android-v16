@@ -319,7 +319,7 @@ public class BridgeWebChromeClient extends WebChromeClient {
 
             }
           } else {
-            result = WebChromeClient.FileChooserParams.parseResult(resultCode, intent);
+            result = fileChooserParams.parseResult(bridge.getContext(), resultCode, intent);
           }
           filePathCallback.onReceiveValue(result);
         }

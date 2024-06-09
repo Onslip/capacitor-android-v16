@@ -10,7 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.*;
 
-import java.io.InputStream;
+import java.io.*;
+import java.util.Arrays;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
@@ -251,17 +252,27 @@ public interface WebView {
         }
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP) public static class FileChooserParams {
-            android.webkit.WebChromeClient.FileChooserParams fileChooserParams;
-            private String acceptType;
-            private String capture;
+            private android.webkit.WebChromeClient.FileChooserParams fileChooserParams;
+
+            private String title;
+            private int mode;
+            private String[] acceptTypes;
+            private boolean capture;
+            private boolean resolveUris;
 
             protected FileChooserParams(android.webkit.WebChromeClient.FileChooserParams params) {
                 fileChooserParams = params;
             }
 
             protected FileChooserParams(String acceptType, String capture) {
-                this.acceptType = acceptType;
-                this.capture    = capture;
+                this(null, MODE_OPEN, new String[] { acceptType }, capture != null && !capture.isEmpty());
+            }
+
+            protected FileChooserParams(String title, int mode, String[] acceptTypes, boolean capture) {
+                this.title       = title;
+                this.mode        = mode;
+                this.acceptTypes = acceptTypes;
+                this.capture     = capture;
             }
 
             public static final int MODE_OPEN = 0;
@@ -269,16 +280,27 @@ public interface WebView {
             public static final int MODE_OPEN_FOLDER = 2;
             public static final int MODE_SAVE = 3;
 
-            private static boolean isSystemWebViewIntent;
+            protected FileChooserParams resolveUris() {
+                this.resolveUris = true;
+                return this;
+            }
 
-            public static Uri[] parseResult(int resultCode, Intent data) {
-                if (isSystemWebViewIntent) {
+            private Uri[] resolveUris(Context ctx, Uri[] uris) {
+                for (int i = 0; i < uris.length; ++i) {
+                    uris[i] = resolveUris ? CompatUtils.resolveUri(ctx, uris[i]) : uris[i];
+                }
+
+                return uris;
+            }
+
+            public Uri[] parseResult(Context ctx, int resultCode, Intent data) {
+                if (fileChooserParams != null) {
                     return android.webkit.WebChromeClient.FileChooserParams.parseResult(resultCode, data);
                 } else {
                     if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) {
                         return null;
                     } else {
-                        return new Uri[] { data.getData() };
+                        return resolveUris(ctx, new Uri[] { data.getData() });
                     }
                 }
             }
@@ -287,8 +309,7 @@ public interface WebView {
                 if (fileChooserParams != null) {
                     return fileChooserParams.getMode();
                 } else {
-                    return MODE_OPEN;
-
+                    return mode;
                 }
             }
 
@@ -296,14 +317,15 @@ public interface WebView {
                 if (fileChooserParams != null) {
                     return fileChooserParams.getAcceptTypes();
                 } else {
-                    return new String[] { acceptType };
+                    return acceptTypes;
                 }
             }
+
             public boolean isCaptureEnabled() {
                 if (fileChooserParams != null) {
                     return fileChooserParams.isCaptureEnabled();
                 } else {
-                    return capture != null && !capture.isEmpty();
+                    return capture;
                 }
             }
 
@@ -311,7 +333,7 @@ public interface WebView {
                 if (fileChooserParams != null) {
                     return fileChooserParams.getTitle();
                 } else {
-                    return null;
+                    return title;
                 }
             }
 
@@ -325,13 +347,14 @@ public interface WebView {
 
             public Intent createIntent() {
                 if (fileChooserParams != null) {
-                    isSystemWebViewIntent = true;
                     return fileChooserParams.createIntent();
                 } else {
-                    isSystemWebViewIntent = false;
+                    String type = acceptTypes.length == 1 ? acceptTypes[0] : "*/*";
+
                     return Intent.createChooser(new Intent(Intent.ACTION_GET_CONTENT)
                                                         .addCategory(Intent.CATEGORY_OPENABLE)
-                                                        .setType("*/*"), getTitle());
+                                                        .setTypeAndNormalize(type), getTitle())
+                    ;
                 }
             }
         }

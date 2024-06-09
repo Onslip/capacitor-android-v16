@@ -1,10 +1,15 @@
 package com.getcapacitor;
 
+import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.OpenableColumns;
+import android.webkit.MimeTypeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -59,5 +64,51 @@ public abstract class CompatUtils {
         } else {
             return new Locale(language.split("-")[0]);
         }
+    }
+
+    public static Uri resolveUri(Context ctx, Uri uri) {
+        try {
+            File realFile = new File(FileUtils.getFileUrlForUri(ctx, uri));
+
+            if (realFile.canRead()) {
+                return Uri.fromFile(realFile);
+            }
+        } catch (Exception ex) {
+            // Never mind
+        }
+
+        if (Objects.equals(uri.getScheme(), "content")) {
+            File dir = new File(ctx.getCacheDir(), CompatUtils.class.getName());
+            dir.mkdirs();
+
+            File file = null;
+
+            try (android.database.Cursor cursor = ctx.getContentResolver().query(uri, null, null, null, null)) {
+                Objects.requireNonNull(cursor).moveToFirst();
+                file = new File(dir, cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)));
+            } catch (Exception ex) {
+                Logger.error("Unable to get filename of " + uri, ex);
+            }
+
+            if (file == null) {
+                file = new File(dir, UUID.randomUUID() + "-" + System.currentTimeMillis() + "." +
+                        MimeTypeMap.getSingleton().getExtensionFromMimeType(ctx.getContentResolver().getType(uri)));
+            }
+
+            try (InputStream is = ctx.getContentResolver().openInputStream(uri);
+                 OutputStream os = new FileOutputStream(file)) {
+                byte[] chunk = new byte[4096];
+
+                for (int length = Objects.requireNonNull(is).read(chunk); length != -1; length = is.read(chunk)) {
+                    os.write(chunk, 0, length);
+                }
+
+                uri = Uri.fromFile(file);
+            } catch (Exception ex) {
+                Logger.error("Unable to make a copy of " + uri, ex);
+            }
+        }
+
+        return uri;
     }
 }
