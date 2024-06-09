@@ -16,12 +16,12 @@ import org.mozilla.geckoview.WebExtension.MessageDelegate;
 import org.mozilla.geckoview.WebExtension.PortDelegate;
 
 import java.io.*;
+import java.lang.annotation.*;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.IntConsumer;
 
 import static com.getcapacitor.CompatUtils.US_ASCII;
 import static com.getcapacitor.CompatUtils.wrapJSONObject;
@@ -30,8 +30,14 @@ import static java.util.Locale.ROOT;
 
 // GeckoView 118 verkar ha stöd för Android 4.1
 // CeckoView 119 och senare kräver 5.1. https://bugzilla.mozilla.org/show_bug.cgi?id=1820295
+// Default interface methods + compileOnly: https://issuetracker.google.com/issues/225900051?pli=1
 
 public class WebViewGeckoImpl implements WebView {
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.METHOD})
+    public @interface JavascriptInterface {
+    }
+
     private static GeckoRuntime geckoRuntime;
 
     private final GeckoView geckoView;
@@ -201,7 +207,15 @@ public class WebViewGeckoImpl implements WebView {
 
     @Override public void addJavascriptInterface(Object object, String name) {
         Logger.info("GeckoView addJavascriptInterface " + object + " - " + name);
-        gvAPI.addJavascriptInterface(object, name);
+        ArrayList<String> names = new ArrayList<>();
+
+        for (Method method : object.getClass().getMethods()) {
+            if (method.isAnnotationPresent(JavascriptInterface.class)) {
+                names.add(method.getName());
+            }
+        }
+
+        gvAPI.addJavascriptInterface(object, name, names.toArray(new String[0]));
     }
 
     // Some old Android devices crashes when a method is annotated with
@@ -210,7 +224,7 @@ public class WebViewGeckoImpl implements WebView {
         Logger.info("GeckoView addMessageHandler " + messageHandler + " - " + name);
 
         if (!"androidBridge".equals(name)) {
-            throw new IllegalArgumentException("MessageHandler must be registrerd as 'androidBridge'");
+            throw new IllegalArgumentException("MessageHandler must be registered as 'androidBridge'");
         }
 
         gvAPI.addMessageHandler(messageHandler);
@@ -453,6 +467,10 @@ public class WebViewGeckoImpl implements WebView {
         @Override public void close() {
             if (extension != null) {
                 extension.setMessageDelegate(null, "capacitor.gv.api");
+
+                if (controller != null) {
+                    controller.setMessageDelegate(extension, null, "capacitor.gv.api");
+                }
             }
         }
 
