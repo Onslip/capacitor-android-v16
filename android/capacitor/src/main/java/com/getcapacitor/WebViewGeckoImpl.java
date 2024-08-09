@@ -40,11 +40,12 @@ public class WebViewGeckoImpl implements WebView {
     }
 
     private static GeckoRuntime geckoRuntime;
+    private static WebExtension webExtension;
+    private static CapacitorGVProxy capacitorGVProxy = new CapacitorGVProxy();
 
     private final GeckoView geckoView;
-    private final GeckoSession geckoSession;
-    private final CapacitorGVProxy gvProxy = new CapacitorGVProxy();
-    private final CapacitorGVAPI gvAPI = new CapacitorGVAPI();
+    private final GeckoSession geckoSession = new GeckoSession();
+    private final CapacitorGVAPI capacitorGVAPI = new CapacitorGVAPI();
 
     private boolean currentCanGoBack = false;
     private @Nullable String currentURI = null;
@@ -58,8 +59,24 @@ public class WebViewGeckoImpl implements WebView {
             return new BridgeActivity.InitializationHandler(bridgeActivity) {
                 @Override public void initialize(OnInitialized onInitialized) {
                     getListener().onInitStarted();
-                    getListener().onCompleted();
-                    onInitialized.contentView(R.layout.bridge_layout_gecko);
+
+                    synchronized (WebViewGeckoImpl.class) {
+                        if (geckoRuntime == null) {
+                            geckoRuntime = GeckoRuntime.create(bridgeActivity);
+                            geckoRuntime.getSettings().setConsoleOutputEnabled(true);
+                        }
+                    }
+
+                    geckoRuntime
+                        .getWebExtensionController()
+                        .ensureBuiltIn("resource://android/assets/capacitor-gv/", "capacitor-gv@onslip.com")
+                        .accept(extension -> org.mozilla.gecko.util.ThreadUtils.runOnUiThread(() -> {
+                                    webExtension = extension;
+                                    capacitorGVProxy.attach(extension);
+
+                                    getListener().onCompleted();
+                                    onInitialized.contentView(R.layout.bridge_layout_gecko);
+                                }), ex -> Logger.error("Error registering extension", ex));
                 }
 
                 @Override public void cancel() {
@@ -73,7 +90,6 @@ public class WebViewGeckoImpl implements WebView {
         Logger.info("Using GeckoView WebView");
 
         this.geckoView = geckoView;
-        geckoSession = new GeckoSession();
 
         geckoSession.setNavigationDelegate(new NavigationDelegate() {
             @Override public void onLocationChange(@NonNull GeckoSession session, @Nullable String url, @NonNull List<PermissionDelegate.ContentPermission> perms, @NonNull Boolean hasUserGesture) {
@@ -148,29 +164,14 @@ public class WebViewGeckoImpl implements WebView {
             }
         });
 
-        synchronized (WebViewGeckoImpl.class) {
-            if (geckoRuntime == null) {
-                geckoRuntime = GeckoRuntime.create(geckoView.getContext());
-                geckoRuntime.getSettings().setConsoleOutputEnabled(true);
-            }
-        }
-
-        geckoRuntime
-            .getWebExtensionController()
-            .ensureBuiltIn("resource://android/assets/capacitor-gv/", "capacitor-gv@onslip.com")
-            .accept(extension -> org.mozilla.gecko.util.ThreadUtils.runOnUiThread(() -> {
-                        gvAPI.attach(extension, geckoSession.getWebExtensionController());
-                        gvProxy.attach(extension);
-                    }),
-                    ex -> Logger.error("MessageDelegate", "Error registering extension", ex));
+        capacitorGVAPI.attach(webExtension, geckoSession.getWebExtensionController());
 
         geckoSession.open(geckoRuntime);
         geckoView.setSession(geckoSession);
     }
 
     @Override public void destroy() {
-        gvAPI.close();
-        gvProxy.close();
+        capacitorGVAPI.close();
         geckoSession.close();
     }
 
@@ -196,6 +197,7 @@ public class WebViewGeckoImpl implements WebView {
     @Override public void setWebViewClient(WebViewClient client) {
         Logger.info("GeckoView setWebViewClient " + client);
         webViewClient = client;
+        capacitorGVProxy.setWebViewClient(client);
     }
 
     @Override public void onPause() {
@@ -233,7 +235,7 @@ public class WebViewGeckoImpl implements WebView {
 
     @Override public void evaluateJavascript(String script, ValueCallback<String> resultCallback) {
         Logger.info("GeckoView evaluateJavascript " + script);
-        gvAPI.evaluateJavascript(script, resultCallback);
+        capacitorGVAPI.evaluateJavascript(script, resultCallback);
     }
 
     @Override public void addJavascriptInterface(Object object, String name) {
@@ -246,7 +248,7 @@ public class WebViewGeckoImpl implements WebView {
             }
         }
 
-        gvAPI.addJavascriptInterface(object, name, names.toArray(new String[0]));
+        capacitorGVAPI.addJavascriptInterface(object, name, names.toArray(new String[0]));
     }
 
     // Some old Android devices crashes when a method is annotated with
@@ -258,7 +260,7 @@ public class WebViewGeckoImpl implements WebView {
             throw new IllegalArgumentException("MessageHandler must be registered as 'androidBridge'");
         }
 
-        gvAPI.addMessageHandler(messageHandler);
+        capacitorGVAPI.addMessageHandler(messageHandler);
     }
 
     @Override public CookieManager getCookieManager() {
@@ -392,7 +394,7 @@ public class WebViewGeckoImpl implements WebView {
         }
     }
 
-    private class CapacitorGVAPI implements Closeable {
+    private static class CapacitorGVAPI implements Closeable {
         final private List<JSONObject> enquedRequests = new ArrayList<>();
         final private Map<String, Object> jsInterfaces = Collections.synchronizedMap(new HashMap<>());
         final private Map<Long, ValueCallback<String>> resultCallbacks = Collections.synchronizedMap(new HashMap<>());
@@ -507,10 +509,10 @@ public class WebViewGeckoImpl implements WebView {
 
         public void evaluateJavascript(String script, ValueCallback<String> resultCallback) {
             try {
-                gvAPI.sendMessage(new JSONObject()
-                                          .put("action", "evaluate-js")
-                                          .put("script", script),
-                                  resultCallback);
+                sendMessage(new JSONObject()
+                                .put("action", "evaluate-js")
+                                .put("script", script),
+                            resultCallback);
             } catch (JSONException ex) {
                 throw new UnsupportedOperationException(ex);
             }
@@ -518,11 +520,11 @@ public class WebViewGeckoImpl implements WebView {
 
         public void addJavascriptInterface(Object object, String name, String... methods) {
             try {
-                gvAPI.sendMessage(new JSONObject()
-                                          .put("action",  "add-js-interface")
-                                          .put("name",    name)
-                                          .put("methods", wrapJSONObject(methods)),
-                                  null);
+                sendMessage(new JSONObject()
+                                .put("action",  "add-js-interface")
+                                .put("name",    name)
+                                .put("methods", wrapJSONObject(methods)),
+                            null);
                 jsInterfaces.put(name, object);
             } catch (JSONException ex) {
                 throw new UnsupportedOperationException(ex);
@@ -552,11 +554,12 @@ public class WebViewGeckoImpl implements WebView {
         }
     }
 
-    private class CapacitorGVProxy implements Closeable {
+    private static class CapacitorGVProxy implements Closeable {
         private final ExecutorService executor = Executors.newCachedThreadPool();
         private final Set<Socket> connections = Collections.synchronizedSet(new HashSet<>());
         private @Nullable WebExtension extension;
         private @Nullable volatile ServerSocket serverSocket;
+        private @Nullable WebViewClient webViewClient;
 
         private CapacitorGVProxy() {
             executor.execute(() -> acceptProxyConnections());
@@ -595,6 +598,10 @@ public class WebViewGeckoImpl implements WebView {
             }, "capacitor.gv.proxy");
         }
 
+        public void setWebViewClient(WebViewClient client) {
+            webViewClient = client;
+        }
+
         @Override public void close() {
             if (extension != null) {
                 extension.setMessageDelegate(null, "capacitor.gv.proxy");
@@ -619,7 +626,7 @@ public class WebViewGeckoImpl implements WebView {
         }
 
         private @Nullable WebResourceResponse shouldInterceptRequest(String method, String url, Map<String, String> requestHeaders) {
-            return webViewClient == null ? null : webViewClient.shouldInterceptRequest(WebViewGeckoImpl.this, new WebResourceRequest() {
+            return webViewClient == null ? null : webViewClient.shouldInterceptRequest(null /* Fortunately never used! */, new WebResourceRequest() {
                 @Override public String              getMethod()         { return method;         }
                 @Override public Uri                 getUrl()            { return Uri.parse(url); }
                 @Override public Map<String, String> getRequestHeaders() { return requestHeaders; }
