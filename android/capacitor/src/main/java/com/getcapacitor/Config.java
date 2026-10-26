@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 /**
  * @deprecated use getBridge().getConfig() instead of the static Config
  */
+@Deprecated
 public class Config {
 
   private JSONObject config = new JSONObject();
@@ -29,6 +30,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static void load(Activity activity) {
     Config.getInstance().loadConfig(activity);
   }
@@ -65,6 +67,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static JSONObject getObject(String key) {
     try {
       return getInstance().config.getJSONObject(key);
@@ -89,6 +92,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static String getString(String key) {
     return getString(key, null);
   }
@@ -96,6 +100,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static String getString(String key, String defaultValue) {
     String k = getConfigKey(key);
     try {
@@ -113,6 +118,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static boolean getBoolean(String key, boolean defaultValue) {
     String k = getConfigKey(key);
     try {
@@ -126,6 +132,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static int getInt(String key, int defaultValue) {
     String k = getConfigKey(key);
     try {
@@ -140,6 +147,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   private static String getConfigKey(String key) {
     String[] parts = key.split("\\.");
     if (parts.length > 0) {
@@ -151,6 +159,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static String[] getArray(String key) {
     return getArray(key, null);
   }
@@ -158,6 +167,7 @@ public class Config {
   /**
    * @deprecated
    */
+  @Deprecated
   public static String[] getArray(String key, String[] defaultValue) {
     String k = getConfigKey(key);
     try {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -ex
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 
 git clean -d -x -i
 pod repo update

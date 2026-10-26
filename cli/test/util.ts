@@ -178,7 +178,7 @@ Pod::Spec.new do |s|
   s.authors = { 'Capacitor Generator' => 'hi@example.com' }
   s.source = { :git => 'https://github.com/ionic-team/does-not-exist.git', :tag => s.version.to_s }
   s.source_files = 'sources/**/*.{swift,h,m,c,cc,mm}'
-  s.ios.deployment_target  = '10'
+  s.ios.deployment_target  = '16.6'
   s.dependency 'CapacitorCordova'
 end`;
 
